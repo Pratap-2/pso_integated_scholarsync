@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Upcoming Exams &amp; Assignments</title>
+<style>
+:root{
+  --navy:#020810;--navy1:#050d1c;--navy2:#08152a;--navy3:#0c1d3a;--navy4:#102448;
+  --azure:#1060f0;--azure-m:#3d7fff;--azure-l:#6aa0ff;--azure-xl:#9dc4ff;
+  --electric:#00cfff;--mint:#00e5a0;--warn:#facc15;--danger:#ff6b7a;
+  --border:rgba(16,96,240,.14);--border2:rgba(0,207,255,.18);
+  --t1:#edf4ff;--t2:#8aaed4;--t3:#426080;--t4:#1a3050;
+  --font-d:'SF Pro Display',-apple-system,'Segoe UI',system-ui,sans-serif;
+  --font-b:'SF Pro Text',-apple-system,'Segoe UI',system-ui,sans-serif;
+  --font-m:'SF Mono','Fira Code','Cascadia Code','Consolas',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-b);background:var(--navy);color:var(--t1);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:rgba(16,96,240,.25);border-radius:3px;}
+
+/* BG */
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 60% at 75% 8%,rgba(16,96,240,.07) 0%,transparent 55%),
+             radial-gradient(ellipse 60% 70% at 5% 90%,rgba(0,207,255,.05) 0%,transparent 55%);}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(16,96,240,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(16,96,240,.03) 1px,transparent 1px);
+  background-size:64px 64px;animation:gridMove 45s linear infinite;}
+
+@keyframes gridMove{to{background-position:64px 64px;}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes spinR{to{transform:rotate(-360deg);}}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.12);opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.15}}
+@keyframes ping{0%{transform:scale(1);opacity:.9}80%{transform:scale(2.4);opacity:0}100%{opacity:0}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes rowIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+@keyframes shimmer{0%{left:-120%}100%{left:220%}}
+
+/* ── TOPBAR ── */
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;
+  height:58px;padding:0 28px;
+  background:rgba(2,8,16,.95);backdrop-filter:blur(28px);border-bottom:1px solid var(--border);}
+.topbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--azure-m) 30%,var(--electric) 70%,transparent);opacity:.28;}
+.tb-logo{position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.tl-hex{position:absolute;inset:0;border-radius:8px;border:1px solid rgba(16,96,240,.4);background:rgba(16,96,240,.08);transform:rotate(12deg);}
+.tl-hex2{position:absolute;inset:4px;border-radius:5px;border:1px solid rgba(0,207,255,.25);background:rgba(0,207,255,.05);transform:rotate(-12deg);animation:spinR 20s linear infinite;}
+.tl-dot{position:relative;z-index:2;width:7px;height:7px;border-radius:50%;background:var(--electric);box-shadow:0 0 10px var(--electric);animation:breathe 3s ease-in-out infinite;}
+.tb-text{}
+.tb-title{font-family:var(--font-d);font-size:16px;font-weight:800;letter-spacing:-.03em;
+  background:linear-gradient(110deg,#fff 20%,var(--azure-l) 60%,var(--electric));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.tb-sub{font-family:var(--font-m);font-size:8px;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;margin-top:1px;}
+.tb-badge{margin-left:auto;display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;
+  font-family:var(--font-m);font-size:8px;letter-spacing:.1em;text-transform:uppercase;
+  background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.28);color:var(--mint);}
+.tb-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 7px var(--mint);position:relative;}
+.tb-badge-dot::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--mint);animation:ping 2s ease-out infinite;}
+
+/* ── MAIN CONTAINER ── */
+.container{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:40px 28px 60px;}
+
+/* ── HEADER ── */
+.header{margin-bottom:32px;animation:fadeUp .4s ease both;}
+.header-kicker{font-family:var(--font-m);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--azure-l);margin-bottom:12px;}
+.header-title{font-family:var(--font-d);font-size:clamp(26px,4vw,42px);font-weight:800;line-height:1.1;letter-spacing:-.03em;
+  background:linear-gradient(135deg,#fff 20%,var(--azure-l) 55%,var(--electric) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px;}
+.header-sub{font-size:13px;color:var(--t2);line-height:1.7;}
+
+/* ── STATS BAR ── */
+.stats-bar{display:flex;align-items:center;gap:10px;margin-bottom:24px;flex-wrap:wrap;animation:fadeUp .4s .08s ease both;}
+.stat-pill{display:flex;align-items:center;gap:7px;padding:7px 16px;border-radius:100px;
+  font-family:var(--font-m);font-size:10px;letter-spacing:.08em;
+  background:rgba(16,96,240,.08);border:1px solid var(--border);color:var(--t2);}
+.stat-pill--exam{border-color:rgba(0,207,255,.25);background:rgba(0,207,255,.07);color:var(--electric);}
+.stat-pill--assignment{border-color:rgba(61,127,255,.28);background:rgba(61,127,255,.08);color:var(--azure-l);}
+.stat-pill--total{border-color:rgba(0,229,160,.28);background:rgba(0,229,160,.07);color:var(--mint);font-weight:700;}
+.stat-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot-exam{background:var(--electric);box-shadow:0 0 6px var(--electric);}
+.dot-assignment{background:var(--azure-m);box-shadow:0 0 6px var(--azure-m);}
+.stat-num{font-weight:700;}
+
+/* ── TABLE WRAPPER ── */
+.table-wrapper{
+  background:linear-gradient(148deg,var(--navy3),var(--navy2));
+  border:1px solid var(--border);border-radius:14px;
+  overflow:hidden;animation:fadeUp .4s .14s ease both;
+}
+
+/* ── TABLE ── */
+.schedule-table{width:100%;border-collapse:collapse;}
+.schedule-table thead tr{background:rgba(2,8,16,.55);border-bottom:1px solid var(--border);}
+.schedule-table thead th{
+  padding:13px 18px;text-align:left;
+  font-family:var(--font-m);font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--azure-l);font-weight:400;
+}
+.schedule-table tbody tr{
+  border-bottom:1px solid rgba(16,96,240,.07);
+  transition:background .15s;
+  animation:rowIn .3s ease both;
+}
+.schedule-table tbody tr:last-child{border-bottom:none;}
+.schedule-table tbody tr:hover{background:rgba(16,96,240,.07);}
+
+/* urgency row tints */
+.row-urgent{background:rgba(255,107,122,.04) !important;border-left:2px solid rgba(255,107,122,.5);}
+.row-urgent:hover{background:rgba(255,107,122,.07) !important;}
+.row-soon{background:rgba(250,204,21,.03) !important;border-left:2px solid rgba(250,204,21,.35);}
+.row-soon:hover{background:rgba(250,204,21,.06) !important;}
+
+.schedule-table td{padding:14px 18px;font-size:13px;color:var(--t2);vertical-align:middle;}
+
+/* type tag */
+.tag{display:inline-flex;align-items:center;padding:3px 11px;border-radius:100px;
+  font-family:var(--font-m);font-size:9px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;}
+.tag-exam{background:rgba(0,207,255,.1);color:var(--electric);border:1px solid rgba(0,207,255,.28);}
+.tag-assignment{background:rgba(61,127,255,.1);color:var(--azure-l);border:1px solid rgba(61,127,255,.28);}
+
+/* title cell */
+.item-title{color:var(--t1);font-weight:500;font-size:13.5px;letter-spacing:-.01em;}
+.title-cell{display:flex;align-items:center;gap:9px;flex-wrap:wrap;}
+.due-badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:100px;
+  font-family:var(--font-m);font-size:8px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;}
+.due-today{background:rgba(255,107,122,.15);color:var(--danger);border:1px solid rgba(255,107,122,.3);}
+.due-tomorrow{background:rgba(250,204,21,.12);color:var(--warn);border:1px solid rgba(250,204,21,.28);}
+.due-soon{background:rgba(0,207,255,.1);color:var(--electric);border:1px solid rgba(0,207,255,.2);}
+
+/* date cell */
+.date-val{font-family:var(--font-m);font-size:11px;color:var(--t3);letter-spacing:.04em;}
+
+/* loading */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;padding:72px 40px;
+  font-family:var(--font-m);font-size:10px;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;}
+.spinner{width:28px;height:28px;border-radius:50%;
+  border:2px solid rgba(16,96,240,.15);border-top-color:var(--azure-m);
+  animation:spin .7s linear infinite;}
+
+/* error */
+.error-msg{display:none;align-items:center;justify-content:center;gap:8px;
+  padding:40px 28px;font-family:var(--font-m);font-size:11px;letter-spacing:.08em;
+  color:var(--danger);background:rgba(255,107,122,.05);border-top:1px solid rgba(255,107,122,.15);}
+.error-msg code{background:rgba(255,107,122,.1);padding:2px 7px;border-radius:5px;font-size:10px;}
+
+/* empty state */
+.empty-state{
+  text-align:center;padding:72px 40px;
+  font-family:var(--font-m);font-size:10px;color:var(--t4);
+  letter-spacing:.14em;text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="tb-logo">
+    <div class="tl-hex"></div><div class="tl-hex2"></div><div class="tl-dot"></div>
+  </div>
+  <div class="tb-text">
+    <div class="tb-title">Academic Planner</div>
+    <div class="tb-sub">Planner Agent · Deadlines</div>
+  </div>
+  <div class="tb-badge"><div class="tb-badge-dot"></div>Live Schedule</div>
+</div>
+
+<div class="container">
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-kicker">Academic Planner</div>
+    <h1 class="header-title">Upcoming Exams &amp; Assignments</h1>
+    <p class="header-sub">Stay ahead of your deadlines</p>
+  </header>
+
+  <!-- STATS BAR -->
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-pill stat-pill--exam">
+      <span class="stat-dot dot-exam"></span>
+      <span class="stat-num" id="exam-count">0</span>&nbsp;Exams
+    </div>
+    <div class="stat-pill stat-pill--assignment">
+      <span class="stat-dot dot-assignment"></span>
+      <span class="stat-num" id="assignment-count">0</span>&nbsp;Assignments
+    </div>
+    <div class="stat-pill stat-pill--total">
+      <span class="stat-num" id="total-count">0</span>&nbsp;Total
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="table-wrapper">
+    <table class="schedule-table" id="schedule-table">
+      <thead>
+        <tr>
+          <th class="col-type">Type</th>
+          <th class="col-title">Title</th>
+          <th class="col-date">Start</th>
+          <th class="col-date">End</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      Loading schedule…
+    </div>
+    <div class="error-msg" id="error-msg">
+      <span>⚠</span> Could not load <code>sync_db.json</code>. Make sure the file exists in the same directory.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function formatDate(isoString){
+    const d = new Date(isoString);
+    return d.toLocaleString(undefined,{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  }
+  function getType(key){
+    return key.startsWith('assignment_') ? 'Assignment' : 'Exam';
+  }
+
+  async function loadSchedule(){
+    const tbody    = document.getElementById('table-body');
+    const loading  = document.getElementById('loading');
+    const errorMsg = document.getElementById('error-msg');
+    try{
+      const res = await fetch('chatbot/sync/sync_db.json');
+      if(!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      const items = Object.entries(data).map(([key,val])=>({
+        key, type:getType(key), title:val.title, start:val.start, end:val.end
+      }));
+      items.sort((a,b)=>new Date(a.start)-new Date(b.start));
+
+      const exams       = items.filter(i=>i.type==='Exam').length;
+      const assignments = items.filter(i=>i.type==='Assignment').length;
+      document.getElementById('exam-count').textContent       = exams;
+      document.getElementById('assignment-count').textContent = assignments;
+      document.getElementById('total-count').textContent      = items.length;
+
+      loading.style.display = 'none';
+
+      if(items.length===0){
+        tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No upcoming items found.</td></tr>`;
+        return;
+      }
+
+      items.forEach((item,i)=>{
+        const tr = document.createElement('tr');
+        tr.style.animationDelay = `${i*60}ms`;
+
+        const typeClass  = item.type==='Exam' ? 'tag-exam' : 'tag-assignment';
+        const now        = new Date();
+        const startDate  = new Date(item.start);
+        const diffMs     = startDate - now;
+        const diffDays   = Math.ceil(diffMs/(1000*60*60*24));
+
+        if(diffDays<=1 && diffDays>=0) tr.classList.add('row-urgent');
+        else if(diffDays<=3 && diffDays>=0) tr.classList.add('row-soon');
+
+        let badge = '';
+        if(diffDays>=0 && diffDays<=3){
+          const cls  = diffDays===0?'due-today':diffDays===1?'due-tomorrow':'due-soon';
+          const text = diffDays===0?'Today':diffDays===1?'Tomorrow':`In ${diffDays}d`;
+          badge = `<span class="due-badge ${cls}">${text}</span>`;
+        }
+
+        tr.innerHTML = `
+          <td><span class="tag ${typeClass}">${item.type}</span></td>
+          <td><div class="title-cell"><span class="item-title">${item.title}</span>${badge}</div></td>
+          <td><span class="date-val">${formatDate(item.start)}</span></td>
+          <td><span class="date-val">${formatDate(item.end)}</span></td>`;
+        tbody.appendChild(tr);
+      });
+
+    }catch(err){
+      loading.style.display = 'none';
+      errorMsg.style.display = 'flex';
+      console.error(err);
+    }
+  }
+  loadSchedule();
+</script>
+</body>
+</html>

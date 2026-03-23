@@ -1,0 +1,28 @@
+# Core API
+fastapi==0.108.0
+uvicorn==0.25.0
+pydantic>=2.7.4
+python-multipart==0.0.9
+python-dotenv==1.0.0
+
+# LLM / LangChain
+langchain==0.3.11
+langgraph==0.2.56
+langchain-core==0.3.24
+langchain-groq==0.2.1
+langchain-google-genai
+langchain-community
+langchain-text-splitters
+
+# Resume parsing
+PyPDF2==3.0.1
+python-docx==1.1.0
+
+# Azure services
+azure-cognitiveservices-speech==1.41.1
+azure-cosmos
+azure-search-documents
+azure-identity
+
+# Utilities
+requests

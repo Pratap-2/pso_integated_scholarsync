@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>ScholarSync Materials</title>
+<style>
+:root{
+  --navy:#020810;--navy1:#050d1c;--navy2:#08152a;--navy3:#0c1d3a;--navy4:#102448;
+  --azure:#1060f0;--azure-m:#3d7fff;--azure-l:#6aa0ff;--azure-xl:#9dc4ff;
+  --electric:#00cfff;--mint:#00e5a0;
+  --border:rgba(16,96,240,.14);--border2:rgba(0,207,255,.18);
+  --t1:#edf4ff;--t2:#8aaed4;--t3:#426080;--t4:#1a3050;
+  --font-d:'SF Pro Display',-apple-system,'Segoe UI',system-ui,sans-serif;
+  --font-b:'SF Pro Text',-apple-system,'Segoe UI',system-ui,sans-serif;
+  --font-m:'SF Mono','Fira Code','Cascadia Code','Consolas',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-b);background:var(--navy);color:var(--t1);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:rgba(16,96,240,.25);border-radius:3px;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 60% at 70% 10%,rgba(16,96,240,.07) 0%,transparent 55%),
+             radial-gradient(ellipse 60% 80% at 5% 90%,rgba(0,207,255,.05) 0%,transparent 55%);}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(16,96,240,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(16,96,240,.03) 1px,transparent 1px);
+  background-size:64px 64px;animation:gridMove 45s linear infinite;}
+@keyframes gridMove{to{background-position:64px 64px;}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes spinR{to{transform:rotate(-360deg);}}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.12);opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes ping{0%{transform:scale(1);opacity:.9}80%{transform:scale(2.4);opacity:0}100%{opacity:0}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes dotBounce{0%,80%,100%{transform:translateY(0);opacity:.3}40%{transform:translateY(-7px);opacity:1}}
+@keyframes shimmer{0%{left:-120%}100%{left:220%}}
+
+/* NAVBAR */
+.navbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;height:58px;padding:0 28px;
+  background:rgba(2,8,16,.95);backdrop-filter:blur(28px);border-bottom:1px solid var(--border);}
+.navbar::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--azure-m) 30%,var(--electric) 70%,transparent);opacity:.28;}
+.nav-logo{position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.nl-hex{position:absolute;inset:0;border-radius:8px;border:1px solid rgba(16,96,240,.4);background:rgba(16,96,240,.08);transform:rotate(12deg);}
+.nl-hex2{position:absolute;inset:4px;border-radius:5px;border:1px solid rgba(0,207,255,.25);background:rgba(0,207,255,.05);transform:rotate(-12deg);animation:spinR 20s linear infinite;}
+.nl-dot{position:relative;z-index:2;width:7px;height:7px;border-radius:50%;background:var(--electric);box-shadow:0 0 10px var(--electric);animation:breathe 3s ease-in-out infinite;}
+.nav-text{}
+.nav-title{font-family:var(--font-d);font-size:16px;font-weight:800;letter-spacing:-.03em;
+  background:linear-gradient(110deg,#fff 20%,var(--azure-l) 60%,var(--electric));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.nav-sub{font-family:var(--font-m);font-size:8px;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;margin-top:1px;}
+.nav-badge{margin-left:auto;display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;
+  font-family:var(--font-m);font-size:8px;letter-spacing:.1em;text-transform:uppercase;
+  background:rgba(0,229,160,.07);border:1px solid rgba(0,229,160,.28);color:var(--mint);}
+.nb-dot{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 7px var(--mint);position:relative;}
+.nb-dot::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--mint);animation:ping 2s ease-out infinite;}
+
+/* HERO */
+.hero{position:relative;z-index:1;padding:44px 28px 32px;border-bottom:1px solid var(--border);
+  display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap;}
+.hero-kicker{font-family:var(--font-m);font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:var(--azure-l);margin-bottom:12px;}
+.hero-title{font-family:var(--font-d);font-size:clamp(28px,4vw,46px);font-weight:800;line-height:1.1;letter-spacing:-.03em;
+  background:linear-gradient(135deg,#fff 20%,var(--azure-l) 55%,var(--electric) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hero-sub{font-size:13px;color:var(--t2);margin-top:10px;line-height:1.7;max-width:420px;}
+.search-wrap{position:relative;flex-shrink:0;}
+.search-wrap input{width:290px;padding:12px 44px 12px 16px;background:rgba(8,21,42,.8);border:1px solid var(--border2);
+  border-radius:10px;color:var(--t1);font-family:var(--font-b);font-size:13px;outline:none;
+  transition:border-color .2s,background .2s,box-shadow .2s;caret-color:var(--azure-m);}
+.search-wrap input::placeholder{color:var(--t4);}
+.search-wrap input:focus{border-color:rgba(16,96,240,.42);background:rgba(8,21,42,.95);box-shadow:0 0 0 3px rgba(16,96,240,.07);}
+.search-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;}
+
+/* RESULTS BAR */
+.results-bar{position:relative;z-index:1;display:none;align-items:center;justify-content:space-between;
+  padding:12px 28px;border-bottom:1px solid var(--border);}
+.results-lbl{font-family:var(--font-m);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--t3);}
+.results-ct{font-family:var(--font-m);font-size:9px;color:var(--electric);
+  background:rgba(0,207,255,.08);border:1px solid rgba(0,207,255,.2);padding:2px 10px;border-radius:100px;}
+
+/* STATUS */
+.status{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;gap:10px;
+  padding:80px 40px;font-family:var(--font-m);font-size:10px;color:var(--t3);letter-spacing:.12em;text-transform:uppercase;}
+.ld-dots{display:flex;gap:5px;align-items:center;}
+.ld-dots span{width:7px;height:7px;border-radius:50%;animation:dotBounce 1.2s ease-in-out infinite;}
+.ld-dots span:nth-child(1){background:var(--azure-m);box-shadow:0 0 6px var(--azure-m);animation-delay:0s;}
+.ld-dots span:nth-child(2){background:var(--azure-l);animation-delay:.2s;}
+.ld-dots span:nth-child(3){background:var(--electric);box-shadow:0 0 6px var(--electric);animation-delay:.4s;}
+
+/* GRID */
+.grid{position:relative;z-index:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;padding:22px 28px 60px;}
+
+/* CARD */
+.card{position:relative;overflow:hidden;background:linear-gradient(148deg,var(--navy3),var(--navy2));
+  border:1px solid var(--border);border-radius:14px;padding:22px;
+  opacity:0;transform:translateY(16px);animation:fadeUp .4s forwards;
+  transition:transform .25s,border-color .25s,box-shadow .25s;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--azure-m),transparent);opacity:0;transition:opacity .25s;}
+.card::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(circle at 50% 0%,rgba(16,96,240,.06),transparent 65%);opacity:0;transition:opacity .25s;}
+.card-shim{position:absolute;top:0;left:-120%;width:55%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.03),transparent);pointer-events:none;}
+.card:hover{transform:translateY(-5px);border-color:rgba(61,127,255,.32);box-shadow:0 10px 36px rgba(16,96,240,.16);}
+.card:hover::before,.card:hover::after{opacity:1;}
+.card:hover .card-shim{animation:shimmer .6s ease forwards;}
+.card-kicker{display:flex;align-items:center;gap:7px;margin-bottom:12px;}
+.ck-dot{width:5px;height:5px;border-radius:50%;background:var(--electric);box-shadow:0 0 6px var(--electric);}
+.ck-lbl{font-family:var(--font-m);font-size:8px;letter-spacing:.18em;text-transform:uppercase;color:var(--azure-l);}
+.card-title{font-family:var(--font-d);font-size:16px;font-weight:700;color:var(--t1);line-height:1.3;letter-spacing:-.015em;margin-bottom:8px;}
+.card-desc{font-size:12.5px;color:var(--t2);line-height:1.7;margin-bottom:16px;font-weight:300;}
+.preview-wrap{border-radius:9px;overflow:hidden;margin-bottom:18px;border:1px solid rgba(16,96,240,.18);background:var(--navy2);position:relative;}
+.preview-wrap::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(to bottom,transparent 60%,rgba(2,8,16,.5));}
+.preview{width:100%;height:185px;border:none;display:block;}
+.card-footer{display:flex;align-items:center;justify-content:space-between;padding-top:14px;border-top:1px solid var(--border);}
+.card-divider{width:20px;height:1px;background:var(--t4);}
+.open-btn{display:inline-flex;align-items:center;gap:7px;font-family:var(--font-d);font-size:11px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--azure-l);text-decoration:none;
+  padding:8px 16px;border-radius:8px;background:rgba(16,96,240,.1);border:1px solid rgba(61,127,255,.25);
+  transition:all .2s;position:relative;overflow:hidden;}
+.open-btn .btn-shim{position:absolute;top:0;left:-120%;width:55%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);transition:left .35s;}
+.open-btn:hover{background:rgba(16,96,240,.2);border-color:rgba(61,127,255,.5);color:var(--azure-xl);transform:translateY(-1px);}
+.open-btn:hover .btn-shim{left:220%;}
+.open-btn svg{transition:transform .2s;}
+.open-btn:hover svg{transform:translateX(3px);}
+
+/* EMPTY */
+.empty{grid-column:1/-1;text-align:center;padding:80px 40px;}
+.empty-orb{position:relative;width:60px;height:60px;margin:0 auto 20px;}
+.eo-r1{position:absolute;inset:4px;border-radius:50%;border:1px solid rgba(16,96,240,.3);animation:spin 8s linear infinite;}
+.eo-r2{position:absolute;inset:-2px;border-radius:50%;border:1px solid rgba(0,207,255,.15);animation:spinR 14s linear infinite;}
+.eo-core{position:absolute;inset:14px;border-radius:50%;background:radial-gradient(circle,rgba(0,207,255,.3),transparent);filter:blur(3px);animation:breathe 4s ease-in-out infinite;}
+.empty-title{font-family:var(--font-d);font-size:20px;font-weight:700;color:var(--t2);margin-bottom:6px;}
+.empty-sub{font-family:var(--font-m);font-size:10px;color:var(--t4);letter-spacing:.1em;text-transform:uppercase;}
+
+/* ERROR */
+.error-msg{position:relative;z-index:1;margin:32px 28px;padding:20px 22px;
+  background:rgba(255,107,122,.06);border:1px solid rgba(255,107,122,.25);border-radius:12px;
+  font-family:var(--font-m);font-size:11px;color:#ff6b7a;letter-spacing:.06em;text-align:center;}
+</style>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="nav-logo">
+    <div class="nl-hex"></div><div class="nl-hex2"></div><div class="nl-dot"></div>
+  </div>
+  <div class="nav-text">
+    <div class="nav-title">Study Materials</div>
+    <div class="nav-sub">Knowledge Agent · Resource Library</div>
+  </div>
+  <div class="nav-badge"><div class="nb-dot"></div>Live Library</div>
+  <button onclick="if(history.length>1){history.back()}else{window.location.href='scholar_sync.html'}" style="margin-left:12px;display:flex;align-items:center;gap:7px;padding:7px 15px;background:rgba(16,96,240,.1);border:1px solid rgba(61,127,255,.28);border-radius:8px;color:#6aa0ff;font-size:12px;cursor:pointer;transition:all .2s;font-family:inherit;" onmouseover="this.style.background='rgba(16,96,240,.22)';this.style.borderColor='rgba(61,127,255,.55)'" onmouseout="this.style.background='rgba(16,96,240,.1)';this.style.borderColor='rgba(61,127,255,.28)'">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+    Back to Chat
+  </button>
+</nav>
+
+<div class="hero">
+  <div>
+    <div class="hero-kicker">Resource Library</div>
+    <div class="hero-title">Your study materials,<br>all in one place.</div>
+    <p class="hero-sub">Browse and search all your class materials. Previewed and linked directly from your course portal.</p>
+  </div>
+  <div class="search-wrap">
+    <input id="search" placeholder="Search by title or keyword…" autocomplete="off">
+    <div class="search-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<div class="results-bar" id="results-bar">
+  <span class="results-lbl">Materials found</span>
+  <span class="results-ct" id="results-count">0</span>
+</div>
+
+<div id="status" class="status">
+  <div class="ld-dots"><span></span><span></span><span></span></div>
+  Loading materials…
+</div>
+
+<div id="materials" class="grid"></div>
+
+<script>
+const API = "http://localhost:8000/proxy/materials"
+let materials = []
+
+function getDrivePreview(url){
+  try{
+    const id = url.split("/d/")[1].split("/")[0]
+    return "https://drive.google.com/file/d/" + id + "/preview"
+  }catch{ return null }
+}
+
+function render(list){
+  const container = document.getElementById("materials")
+  container.innerHTML = ""
+  const bar   = document.getElementById("results-bar")
+  const count = document.getElementById("results-count")
+  bar.style.display = "flex"
+  count.textContent = list.length
+
+  if(list.length === 0){
+    container.innerHTML = `
+      <div class="empty">
+        <div class="empty-orb"><div class="eo-core"></div><div class="eo-r1"></div><div class="eo-r2"></div></div>
+        <div class="empty-title">Nothing found</div>
+        <div class="empty-sub">Try a different search term</div>
+      </div>`
+    return
+  }
+
+  list.forEach((m, i) => {
+    const preview = getDrivePreview(m.materialLink)
+    const card = document.createElement("div")
+    card.className = "card"
+    card.style.animationDelay = (i * 0.06) + "s"
+    card.innerHTML = `
+      <div class="card-shim"></div>
+      <div class="card-kicker"><div class="ck-dot"></div><span class="ck-lbl">Study Material</span></div>
+      <div class="card-title">${m.title}</div>
+      <div class="card-desc">${m.description}</div>
+      ${preview ? `<div class="preview-wrap"><iframe class="preview" src="${preview}" loading="lazy"></iframe></div>` : ""}
+      <div class="card-footer">
+        <div class="card-divider"></div>
+        <a class="open-btn" href="${m.materialLink}" target="_blank">
+          <div class="btn-shim"></div>
+          Open material
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M5 12h14M12 5l7 7-7 7"/>
+          </svg>
+        </a>
+      </div>`
+    container.appendChild(card)
+  })
+}
+
+function filter(){
+  const q = document.getElementById("search").value.toLowerCase()
+  const filtered = materials.filter(m =>
+    m.title.toLowerCase().includes(q) ||
+    m.description.toLowerCase().includes(q)
+  )
+  render(filtered)
+}
+
+async function load(){
+  try{
+    const res  = await fetch(API)
+    const json = await res.json()
+    materials  = json.data
+    document.getElementById("status").style.display = "none"
+    render(materials)
+  }catch{
+    document.getElementById("status").style.display = "none"
+    document.getElementById("materials").innerHTML = `
+      <div class="error-msg">Could not connect to backend · Make sure the FastAPI server is running at localhost:8000</div>`
+  }
+}
+
+document.getElementById("search").addEventListener("input", filter)
+load()
+</script>
+</body>
+</html>

@@ -1,0 +1,255 @@
+import sys
+import asyncio
+
+if sys.platform == 'win32':
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+from fastapi import FastAPI
+from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from analysis_api import get_analysis_report
+# Import chatbot services
+from chatbot import chat_stream, get_all_threads, delete_thread, init_chatbot
+from chatbot import memory
+from typing import List,Optional
+from assignment_solver import solve_assignment
+from fastapi.responses import FileResponse
+# ---------------------------
+# Lifespan (startup/shutdown)
+# ---------------------------
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    # Initialize chatbot memory + graph
+    saver_cm = await init_chatbot()
+
+    yield
+
+    # Cleanup DB connection
+    await saver_cm.__aexit__(None, None, None)
+
+
+# ---------------------------
+# FastAPI app
+# ---------------------------
+
+app = FastAPI(lifespan=lifespan)
+
+
+# ---------------------------
+# CORS
+# ---------------------------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ---------------------------
+# Request models
+# ---------------------------
+
+class ChatRequest(BaseModel):
+    message: str
+    thread_id: str
+
+
+class HistoryRequest(BaseModel):
+    thread_id: str
+
+
+class DeleteThreadRequest(BaseModel):
+    thread_id: str
+
+
+# ---------------------------
+# Streaming chat endpoint
+# ---------------------------
+
+@app.post("/chat-stream")
+async def chat_stream_endpoint(req: ChatRequest):
+
+    async def event_generator():
+
+        async for chunk in chat_stream(
+            req.message,
+            req.thread_id
+        ):
+            yield chunk
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/plain",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+        }
+    )
+
+
+# ---------------------------
+# Get conversation history
+# ---------------------------
+
+@app.post("/history")
+async def get_history_endpoint(req: HistoryRequest):
+
+    if memory.chatbot is None:
+        return {"history": []}
+
+    state = await memory.chatbot.aget_state({
+        "configurable": {
+            "thread_id": req.thread_id
+        }
+    })
+
+    if not state or "messages" not in state.values:
+        return {"history": []}
+
+    return {
+        "history": [
+            {
+                "type": msg.type,
+                "content": msg.content
+            }
+            for msg in state.values["messages"]
+        ]
+    }
+
+
+# ---------------------------
+# Get all threads
+# ---------------------------
+
+@app.get("/threads")
+async def threads_endpoint():
+
+    threads = await get_all_threads()
+
+    return {
+        "threads": threads
+    }
+
+
+# ---------------------------
+# Delete thread
+# ---------------------------
+
+@app.delete("/thread")
+async def delete_thread_endpoint(req: DeleteThreadRequest):
+
+    success = await delete_thread(req.thread_id)
+
+    return {
+        "success": success,
+        "thread_id": req.thread_id
+    }
+
+from chatbot.sync.sync_worker import run_sync
+@app.post("/quicksync")
+def quicksync():
+
+    run_sync()
+
+    return {"status": "success", "message": "Calendars synced"}
+
+
+@app.get("/analysis")
+def analysis():
+
+    return get_analysis_report()
+
+@app.get("/analysis-dashboard")
+def analysis_dashboard():
+    return FileResponse("analysis.html")
+
+
+
+import requests
+
+@app.get("/proxy/assignments")
+def proxy_assignments():
+    url="https://student-portal-3-tos6.onrender.com/api/student/69ad240e7352e15b1e37b844/assignments"
+    return requests.get(url).json()
+
+
+@app.get("/proxy/materials")
+def proxy_materials():
+    url="https://student-portal-3-tos6.onrender.com/materials"
+    return requests.get(url).json()
+
+
+@app.get("/proxy/exams")
+def proxy_exams():
+    url="https://student-portal-3-tos6.onrender.com/api/student/69ad240e7352e15b1e37b844/exams"
+    try:
+        r = requests.get(url, timeout=15)
+        return r.json()
+    except Exception as e:
+        return {"success": False, "error": str(e)}
+
+
+
+
+
+class AssignmentRequest(BaseModel):
+
+    question:str
+
+    history: list = []
+
+    assignment_doc:Optional[str]=None
+
+    material_links:List[str]=[]
+
+
+@app.post("/solve-assignment")
+
+async def solve_assignment_api(req:AssignmentRequest):
+
+    answer=solve_assignment(
+        req.question,
+        req.history,
+        req.assignment_doc,
+        req.material_links
+    )
+
+    return {"answer":answer}
+
+from fastapi.responses import FileResponse
+from assignment_solver import solve_entire_assignment, generate_solution_pdf
+
+
+class FullAssignmentRequest(BaseModel):
+    assignment_doc: str
+    material_links: list = []
+
+
+class FullAssignmentRequest(BaseModel):
+    assignment_doc: str
+    material_links: list = []
+    assignment_id: str
+
+
+@app.post("/generate-assignment-pdf")
+def generate_assignment_pdf(req: FullAssignmentRequest):
+
+    solution = solve_entire_assignment(
+        req.assignment_doc,
+        req.material_links
+    )
+
+    pdf_path = generate_solution_pdf(solution, req.assignment_id)
+
+    return FileResponse(
+        pdf_path,
+        filename=f"Solved_{req.assignment_id}.pdf",
+        media_type="application/pdf"
+    )

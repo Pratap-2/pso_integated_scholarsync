@@ -1,0 +1,232 @@
+{
+  "Data Structures and Algorithms_quiz1": {
+    "title": "Data Structures and Algorithms quiz1",
+    "start": "2026-03-11T04:30:00.000Z",
+    "end": "2026-03-11T05:00:00.000Z"
+  },
+  "Data Structures and Algorithms_quiz2": {
+    "title": "Data Structures and Algorithms quiz2",
+    "start": "2026-03-13T04:30:00.000Z",
+    "end": "2026-03-13T05:00:00.000Z"
+  },
+  "Data Structures and Algorithms_quiz3": {
+    "title": "Data Structures and Algorithms quiz3",
+    "start": "2026-03-16T04:30:00.000Z",
+    "end": "2026-03-16T05:00:00.000Z"
+  },
+  "Data Structures and Algorithms_midSem": {
+    "title": "Data Structures and Algorithms midSem",
+    "start": "2026-03-28T04:30:00.000Z",
+    "end": "2026-03-28T06:30:00.000Z"
+  },
+  "Data Structures and Algorithms_quiz4": {
+    "title": "Data Structures and Algorithms quiz4",
+    "start": "2026-04-11T04:30:00.000Z",
+    "end": "2026-04-11T05:00:00.000Z"
+  },
+  "Data Structures and Algorithms_quiz5": {
+    "title": "Data Structures and Algorithms quiz5",
+    "start": "2026-04-13T04:30:00.000Z",
+    "end": "2026-04-13T05:00:00.000Z"
+  },
+  "Data Structures and Algorithms_quiz6": {
+    "title": "Data Structures and Algorithms quiz6",
+    "start": "2026-04-17T04:30:00.000Z",
+    "end": "2026-04-17T05:00:00.000Z"
+  },
+  "Data Structures and Algorithms_endSem": {
+    "title": "Data Structures and Algorithms endSem",
+    "start": "2026-04-26T04:30:00.000Z",
+    "end": "2026-04-26T06:30:00.000Z"
+  },
+  "Database Management Systems_quiz1": {
+    "title": "Database Management Systems quiz1",
+    "start": "2026-03-13T04:30:00.000Z",
+    "end": "2026-03-13T05:00:00.000Z"
+  },
+  "Database Management Systems_quiz2": {
+    "title": "Database Management Systems quiz2",
+    "start": "2026-03-16T04:30:00.000Z",
+    "end": "2026-03-16T05:00:00.000Z"
+  },
+  "Database Management Systems_quiz3": {
+    "title": "Database Management Systems quiz3",
+    "start": "2026-03-16T12:30:00.000Z",
+    "end": "2026-03-16T13:00:00.000Z"
+  },
+  "Database Management Systems_midSem": {
+    "title": "Database Management Systems midSem",
+    "start": "2026-03-28T10:30:00.000Z",
+    "end": "2026-03-28T12:30:00.000Z"
+  },
+  "Database Management Systems_quiz4": {
+    "title": "Database Management Systems quiz4",
+    "start": "2026-04-13T04:30:00.000Z",
+    "end": "2026-04-13T05:00:00.000Z"
+  },
+  "Database Management Systems_quiz5": {
+    "title": "Database Management Systems quiz5",
+    "start": "2026-04-17T04:30:00.000Z",
+    "end": "2026-04-17T05:00:00.000Z"
+  },
+  "Database Management Systems_quiz6": {
+    "title": "Database Management Systems quiz6",
+    "start": "2026-04-18T04:30:00.000Z",
+    "end": "2026-04-18T05:00:00.000Z"
+  },
+  "Database Management Systems_endSem": {
+    "title": "Database Management Systems endSem",
+    "start": "2026-04-26T10:30:00.000Z",
+    "end": "2026-04-26T12:30:00.000Z"
+  },
+  "Operating Systems_quiz1": {
+    "title": "Operating Systems quiz1",
+    "start": "2026-03-16T04:30:00.000Z",
+    "end": "2026-03-16T05:00:00.000Z"
+  },
+  "Operating Systems_quiz2": {
+    "title": "Operating Systems quiz2",
+    "start": "2026-03-16T12:30:00.000Z",
+    "end": "2026-03-16T13:00:00.000Z"
+  },
+  "Operating Systems_quiz3": {
+    "title": "Operating Systems quiz3",
+    "start": "2026-03-17T04:30:00.000Z",
+    "end": "2026-03-17T05:00:00.000Z"
+  },
+  "Operating Systems_midSem": {
+    "title": "Operating Systems midSem",
+    "start": "2026-03-29T04:30:00.000Z",
+    "end": "2026-03-29T06:30:00.000Z"
+  },
+  "Operating Systems_quiz4": {
+    "title": "Operating Systems quiz4",
+    "start": "2026-04-17T04:30:00.000Z",
+    "end": "2026-04-17T05:00:00.000Z"
+  },
+  "Operating Systems_quiz5": {
+    "title": "Operating Systems quiz5",
+    "start": "2026-04-18T04:30:00.000Z",
+    "end": "2026-04-18T05:00:00.000Z"
+  },
+  "Operating Systems_quiz6": {
+    "title": "Operating Systems quiz6",
+    "start": "2026-04-19T04:30:00.000Z",
+    "end": "2026-04-19T05:00:00.000Z"
+  },
+  "Operating Systems_endSem": {
+    "title": "Operating Systems endSem",
+    "start": "2026-04-28T04:30:00.000Z",
+    "end": "2026-04-28T06:30:00.000Z"
+  },
+  "Computer Networks_quiz1": {
+    "title": "Computer Networks quiz1",
+    "start": "2026-03-16T12:30:00.000Z",
+    "end": "2026-03-16T13:00:00.000Z"
+  },
+  "Computer Networks_quiz2": {
+    "title": "Computer Networks quiz2",
+    "start": "2026-03-17T04:30:00.000Z",
+    "end": "2026-03-17T05:00:00.000Z"
+  },
+  "Computer Networks_quiz3": {
+    "title": "Computer Networks quiz3",
+    "start": "2026-03-17T12:30:00.000Z",
+    "end": "2026-03-17T13:00:00.000Z"
+  },
+  "Computer Networks_midSem": {
+    "title": "Computer Networks midSem",
+    "start": "2026-03-29T10:30:00.000Z",
+    "end": "2026-03-29T12:30:00.000Z"
+  },
+  "Computer Networks_quiz4": {
+    "title": "Computer Networks quiz4",
+    "start": "2026-04-18T04:30:00.000Z",
+    "end": "2026-04-18T05:00:00.000Z"
+  },
+  "Computer Networks_quiz5": {
+    "title": "Computer Networks quiz5",
+    "start": "2026-04-19T04:30:00.000Z",
+    "end": "2026-04-19T05:00:00.000Z"
+  },
+  "Computer Networks_quiz6": {
+    "title": "Computer Networks quiz6",
+    "start": "2026-04-19T12:30:00.000Z",
+    "end": "2026-04-19T13:00:00.000Z"
+  },
+  "Computer Networks_endSem": {
+    "title": "Computer Networks endSem",
+    "start": "2026-04-28T10:30:00.000Z",
+    "end": "2026-04-28T12:30:00.000Z"
+  },
+  "Software Engineering_quiz1": {
+    "title": "Software Engineering quiz1",
+    "start": "2026-03-17T12:30:00.000Z",
+    "end": "2026-03-17T13:00:00.000Z"
+  },
+  "Software Engineering_quiz2": {
+    "title": "Software Engineering quiz2",
+    "start": "2026-03-11T04:30:00.000Z",
+    "end": "2026-03-11T05:00:00.000Z"
+  },
+  "Software Engineering_quiz3": {
+    "title": "Software Engineering quiz3",
+    "start": "2026-03-13T04:30:00.000Z",
+    "end": "2026-03-13T05:00:00.000Z"
+  },
+  "Software Engineering_midSem": {
+    "title": "Software Engineering midSem",
+    "start": "2026-03-30T10:30:00.000Z",
+    "end": "2026-03-30T12:30:00.000Z"
+  },
+  "Software Engineering_quiz4": {
+    "title": "Software Engineering quiz4",
+    "start": "2026-04-19T12:30:00.000Z",
+    "end": "2026-04-19T13:00:00.000Z"
+  },
+  "Software Engineering_quiz5": {
+    "title": "Software Engineering quiz5",
+    "start": "2026-04-11T04:30:00.000Z",
+    "end": "2026-04-11T05:00:00.000Z"
+  },
+  "Software Engineering_quiz6": {
+    "title": "Software Engineering quiz6",
+    "start": "2026-04-13T04:30:00.000Z",
+    "end": "2026-04-13T05:00:00.000Z"
+  },
+  "Software Engineering_endSem": {
+    "title": "Software Engineering endSem",
+    "start": "2026-04-29T10:30:00.000Z",
+    "end": "2026-04-29T12:30:00.000Z"
+  },
+  "assignment_69abdbeb843e1db183a2b21d": {
+    "title": "Assignment Due: Process Scheduling Algorithms",
+    "start": "2026-04-15T18:29:00.000Z",
+    "end": "2026-04-15T18:29:00.000Z"
+  },
+  "assignment_69abdbeb843e1db183a2b21f": {
+    "title": "Assignment Due: Socket Programming",
+    "start": "2026-04-16T18:29:00.000Z",
+    "end": "2026-04-16T18:29:00.000Z"
+  },
+  "assignment_69abdbeb843e1db183a2b221": {
+    "title": "Assignment Due: REST API Development",
+    "start": "2026-04-16T18:29:00.000Z",
+    "end": "2026-04-16T18:29:00.000Z"
+  },
+  "assignment_69abdbeb843e1db183a2b223": {
+    "title": "Assignment Due: Unit Testing Project",
+    "start": "2026-04-17T18:29:00.000Z",
+    "end": "2026-04-17T18:29:00.000Z"
+  },
+  "assignment_69abdbeb843e1db183a2b225": {
+    "title": "Assignment Due: SQL Query Optimization",
+    "start": "2026-04-17T18:29:00.000Z",
+    "end": "2026-04-17T18:29:00.000Z"
+  },
+  "assignment_69abdbeb843e1db183a2b227": {
+    "title": "Assignment Due: Frontend Development Challenge",
+    "start": "2026-04-17T18:29:00.000Z",
+    "end": "2026-04-17T18:29:00.000Z"
+  }
+}

@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+
+# Virtual environment
+myenv/
+
+# Environment variables
+.env
+
+# Node
+node_modules/
+
+# VS Code
+.vscode/
+
+# Project generated files
+cache/
+generated_pdfs/
+
+# Secrets
+credentials.json
+token.pickle

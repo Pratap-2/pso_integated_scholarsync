@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ScholarSync</title>
+
+<link rel="stylesheet" href="nstyle.css">
+
+<style>
+@keyframes spin{
+0%{transform:rotate(0deg);}
+100%{transform:rotate(360deg);}
+}
+</style>
+
+</head>
+
+
+<body>
+
+<div class="app-shell">
+
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+
+
+<div class="sidebar-brand">
+
+<svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+
+<defs>
+<linearGradient id="g1" x1="0" y1="0" x2="24" y2="24">
+<stop offset="0%" stop-color="#50E6FF"/>
+<stop offset="100%" stop-color="#0078D4"/>
+</linearGradient>
+</defs>
+
+<path
+d="M12 2L22 7V17L12 22L2 17V7L12 2Z"
+stroke="url(#g1)"
+stroke-width="1.5"
+fill="rgba(0,120,212,0.1)"
+/>
+
+</svg>
+
+
+<div>
+<div class="brand-name">ScholarSync</div>
+<div class="brand-sub">Azure AI · LangGraph</div>
+</div>
+
+</div>
+
+
+<button class="new-chat-btn" onclick="newChat()">
++ New Chat
+</button>
+
+
+<button class="new-chat-btn" onclick="openDeadlines()">
+Upcoming Deadlines
+</button>
+
+
+<button class="new-chat-btn" onclick="openAnalysis()">
+Analysis & Planner
+</button>
+
+
+<button class="new-chat-btn" onclick="openAssignmentSolver()">
+Assignment Solver
+</button>
+
+
+<!-- NEW BUTTON -->
+<button class="new-chat-btn" onclick="openAIInterviewer()">
+Personal AI Interviewer
+</button>
+
+
+<button class="new-chat-btn" onclick="closeViews()">
+Back to Chat
+</button>
+
+
+<button class="new-chat-btn" onclick="quickSync()">
+Quick Sync
+</button>
+
+
+<div class="section-label">
+Recent History
+</div>
+
+
+<div class="history-list" id="history-list">
+<div class="history-empty">
+No conversations yet
+</div>
+</div>
+
+
+<select id="thread-list" onchange="switchThread()" style="display:none;"></select>
+
+
+<div class="sidebar-footer">
+MS Hackathon 2025
+</div>
+
+
+</aside>
+
+
+
+<!-- MAIN PANEL -->
+<main class="main-panel">
+
+
+<div class="topbar">
+
+<div class="topbar-brand">
+
+<span class="topbar-title">
+ScholarSync
+</span>
+
+<span class="topbar-sub">
+From planning to execution — AI that manages your academic life
+</span>
+
+</div>
+
+
+<div class="status-pill">
+<span class="dot"></span>
+AI Online
+</div>
+
+</div>
+
+
+
+<!-- CHAT AREA -->
+<div class="chat-box" id="chat-box"></div>
+
+
+
+<!-- DEADLINES VIEW -->
+<div id="deadline-view" style="display:none; width:100%; height:100%;">
+
+<iframe
+id="deadline-frame"
+src="http://localhost:5000/"
+style="width:100%; height:100vh; border:none;">
+</iframe>
+
+</div>
+
+
+
+<!-- ANALYSIS VIEW -->
+<div id="analysis-view" style="display:none; width:100%; height:100%;">
+
+<iframe
+src="http://localhost:8000/analysis-dashboard"
+style="width:100%; height:100vh; border:none;">
+</iframe>
+
+</div>
+
+
+
+<!-- ASSIGNMENT SOLVER VIEW -->
+<div id="assignment-view" style="display:none; width:100%; height:100%;">
+
+<iframe
+src="http://localhost:3456/assignment_solver.html"
+style="width:100%; height:100vh; border:none;">
+</iframe>
+
+</div>
+
+
+
+<!-- AI INTERVIEWER VIEW -->
+<div id="ai-interviewer-view" style="display:none; width:100%; height:100%;">
+
+<iframe
+src="https://codeide-frontend.bravetree-cd9e087d.centralindia.azurecontainerapps.io"
+style="width:100%; height:100vh; border:none;">
+</iframe>
+
+</div>
+
+
+
+<!-- INPUT BAR -->
+<div class="input-bar" id="input-bar">
+
+<input
+id="message"
+type="text"
+placeholder="Type your message..."
+autocomplete="off"
+/>
+
+<button onclick="sendMessage()">
+Send
+</button>
+
+</div>
+
+
+</main>
+
+</div>
+
+
+
+<!-- SYNC LOADER -->
+<div id="sync-loader" style="
+display:none;
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.45);
+z-index:9999;
+align-items:center;
+justify-content:center;
+">
+
+<div style="
+background:#1e1e1e;
+padding:30px 40px;
+border-radius:12px;
+text-align:center;
+color:white;
+font-size:20px;
+font-weight:600;
+">
+
+<div style="
+width:35px;
+height:35px;
+border:4px solid #ccc;
+border-top:4px solid #50E6FF;
+border-radius:50%;
+animation:spin 1s linear infinite;
+margin:auto;
+margin-bottom:15px;
+"></div>
+
+Syncing calendars with college portal...
+
+</div>
+
+</div>
+
+
+
+<script type="module" src="js/main.js"></script>
+
+
+<script>
+
+
+function openDeadlines(){
+
+document.getElementById("chat-box").style.display="none"
+document.getElementById("input-bar").style.display="none"
+document.getElementById("analysis-view").style.display="none"
+document.getElementById("assignment-view").style.display="none"
+document.getElementById("ai-interviewer-view").style.display="none"
+document.getElementById("deadline-view").style.display="block"
+
+}
+
+
+function openAnalysis(){
+
+document.getElementById("chat-box").style.display="none"
+document.getElementById("input-bar").style.display="none"
+document.getElementById("deadline-view").style.display="none"
+document.getElementById("assignment-view").style.display="none"
+document.getElementById("ai-interviewer-view").style.display="none"
+document.getElementById("analysis-view").style.display="block"
+
+}
+
+
+function openAssignmentSolver(){
+
+document.getElementById("chat-box").style.display="none"
+document.getElementById("input-bar").style.display="none"
+document.getElementById("deadline-view").style.display="none"
+document.getElementById("analysis-view").style.display="none"
+document.getElementById("ai-interviewer-view").style.display="none"
+document.getElementById("assignment-view").style.display="block"
+
+}
+
+
+function openAIInterviewer(){
+
+document.getElementById("chat-box").style.display="none"
+document.getElementById("input-bar").style.display="none"
+document.getElementById("deadline-view").style.display="none"
+document.getElementById("analysis-view").style.display="none"
+document.getElementById("assignment-view").style.display="none"
+document.getElementById("ai-interviewer-view").style.display="block"
+
+}
+
+
+function closeViews(){
+
+document.getElementById("chat-box").style.display="block"
+document.getElementById("input-bar").style.display="flex"
+document.getElementById("deadline-view").style.display="none"
+document.getElementById("analysis-view").style.display="none"
+document.getElementById("assignment-view").style.display="none"
+document.getElementById("ai-interviewer-view").style.display="none"
+
+}
+
+
+
+async function quickSync(){
+
+const loader=document.getElementById("sync-loader")
+
+loader.style.display="flex"
+
+try{
+
+const res=await fetch("http://localhost:8000/quicksync",{
+method:"POST"
+})
+
+await res.json()
+
+loader.style.display="none"
+
+alert("Calendars synced successfully")
+
+const frame=document.getElementById("deadline-frame")
+
+frame.src=frame.src
+
+}catch(err){
+
+loader.style.display="none"
+
+alert("Sync failed")
+
+}
+
+}
+
+</script>
+
+</body>
+</html>

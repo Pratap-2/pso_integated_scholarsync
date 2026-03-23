@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarSync — Live Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --navy:#020810; --navy1:#050d1c; --navy2:#08152a; --navy3:#0c1d3a; --navy4:#102448;
+  --azure:#1060f0; --azure-m:#3d7fff; --azure-l:#6aa0ff; --azure-xl:#9dc4ff;
+  --electric:#00cfff; --mint:#00e5a0;
+  --border:rgba(16,96,240,.14); --border2:rgba(0,207,255,.18);
+  --t1:#edf4ff; --t2:#8aaed4; --t3:#426080; --t4:#1a3050;
+  --font-d:'SF Pro Display',-apple-system,'Segoe UI',system-ui,sans-serif;
+  --font-b:'SF Pro Text',-apple-system,'Segoe UI',system-ui,sans-serif;
+  --font-m:'SF Mono','Fira Code','Cascadia Code','Consolas',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font-b);background:var(--navy);color:var(--t1);min-height:100vh;overflow-x:hidden;}
+::-webkit-scrollbar{width:3px;height:3px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:rgba(16,96,240,.25);border-radius:3px;}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(ellipse 80% 60% at 70% 10%,rgba(16,96,240,.07) 0%,transparent 55%),radial-gradient(ellipse 60% 80% at 5% 90%,rgba(0,207,255,.05) 0%,transparent 55%);}
+body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(16,96,240,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(16,96,240,.03) 1px,transparent 1px);background-size:64px 64px;animation:gridMove 45s linear infinite;}
+@keyframes gridMove{to{background-position:64px 64px;}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes spinR{to{transform:rotate(-360deg);}}
+@keyframes breathe{0%,100%{transform:scale(1);opacity:.6}50%{transform:scale(1.12);opacity:1}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.2}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+@keyframes loadBar{from{width:0}to{width:100%}}
+@keyframes ping{0%{transform:scale(1);opacity:.9}80%{transform:scale(2.4);opacity:0}100%{opacity:0}}
+
+/* LOADER */
+#loader{position:fixed;inset:0;background:var(--navy);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;transition:opacity .5s;}
+#loader.hidden{opacity:0;pointer-events:none;}
+.ld-logo{font-family:var(--font-d);font-size:18px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(110deg,#fff 20%,var(--azure-l) 60%,var(--electric));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.ld-bar-wrap{width:260px;height:2px;background:rgba(16,96,240,.15);border-radius:2px;overflow:hidden;}
+.ld-bar-fill{height:100%;background:linear-gradient(90deg,var(--azure),var(--electric));border-radius:2px;animation:loadBar 2s ease-in-out forwards;}
+.ld-msg{font-family:var(--font-m);font-size:10px;color:var(--t3);letter-spacing:.15em;text-transform:uppercase;}
+
+/* WRAPPER */
+.wrapper{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:0 32px 48px;}
+
+/* HEADER */
+.dash-header{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:14px;height:58px;margin:0 -32px;padding:0 32px;background:rgba(2,8,16,.95);backdrop-filter:blur(28px);border-bottom:1px solid var(--border);margin-bottom:32px;}
+.dash-header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--azure-m) 30%,var(--electric) 70%,transparent);opacity:.28;}
+.dh-logo{position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.dh-hex{position:absolute;inset:0;border-radius:8px;border:1px solid rgba(16,96,240,.4);background:rgba(16,96,240,.08);transform:rotate(12deg);}
+.dh-hex2{position:absolute;inset:4px;border-radius:5px;border:1px solid rgba(0,207,255,.25);background:rgba(0,207,255,.05);transform:rotate(-12deg);animation:spinR 20s linear infinite;}
+.dh-dot{position:relative;z-index:2;width:7px;height:7px;border-radius:50%;background:var(--electric);box-shadow:0 0 10px var(--electric);animation:breathe 3s ease-in-out infinite;}
+.dh-text{flex:1;min-width:0;}
+.dh-title{font-family:var(--font-d);font-size:16px;font-weight:800;letter-spacing:-.03em;background:linear-gradient(110deg,#fff 20%,var(--azure-l) 60%,var(--electric));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.dh-sub{font-family:var(--font-m);font-size:8px;color:var(--t3);letter-spacing:.14em;text-transform:uppercase;margin-top:1px;}
+.dh-badges{display:flex;gap:8px;align-items:center;margin-left:auto;}
+.dh-badge{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:100px;font-family:var(--font-m);font-size:8px;letter-spacing:.1em;text-transform:uppercase;background:rgba(16,96,240,.08);border:1px solid var(--border);color:var(--t2);}
+.dh-badge.live{background:rgba(0,229,160,.07);border-color:rgba(0,229,160,.28);color:var(--mint);}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 7px var(--mint);position:relative;}
+.live-dot::after{content:'';position:absolute;inset:0;border-radius:50%;background:var(--mint);animation:ping 2s ease-out infinite;}
+
+/* ERROR */
+#errorBox{display:none;margin:32px 0;background:rgba(255,107,122,.06);border:1px solid rgba(255,107,122,.25);border-radius:14px;padding:24px;text-align:center;}
+#errorBox h3{color:#ff6b7a;margin-bottom:8px;font-family:var(--font-d);font-size:15px;}
+#errorBox p{color:var(--t3);font-size:12px;line-height:1.7;}
+#errorBox code{display:block;margin-top:10px;background:rgba(255,255,255,.03);padding:10px 14px;border-radius:8px;font-family:var(--font-m);font-size:11px;color:var(--azure-l);text-align:left;white-space:pre-wrap;border:1px solid var(--border);}
+
+/* SECTION TITLE */
+.sec-title{display:flex;align-items:center;gap:10px;font-family:var(--font-m);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--azure-l);margin-bottom:18px;margin-top:36px;}
+.sec-title::after{content:'';flex:1;height:1px;background:linear-gradient(to right,var(--border),transparent);}
+
+/* STAT CARDS */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:8px;}
+.stat-card{position:relative;overflow:hidden;background:linear-gradient(148deg,var(--navy3),var(--navy2));border:1px solid var(--border);border-radius:14px;padding:20px 18px 18px;animation:fadeUp .5s both;transition:transform .22s,border-color .22s,box-shadow .22s;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;opacity:0;transition:opacity .22s;}
+.stat-card:hover{transform:translateY(-4px);border-color:rgba(61,127,255,.35);box-shadow:0 10px 36px rgba(16,96,240,.16);}
+.stat-card:hover::before{opacity:1;}
+.sc-0::before{background:linear-gradient(90deg,transparent,var(--azure-m),transparent);}
+.sc-1::before{background:linear-gradient(90deg,transparent,var(--mint),transparent);}
+.sc-2::before{background:linear-gradient(90deg,transparent,var(--electric),transparent);}
+.sc-3::before{background:linear-gradient(90deg,transparent,#a78bfa,transparent);}
+.sc-4::before{background:linear-gradient(90deg,transparent,#f472b6,transparent);}
+.stat-icon{font-size:20px;margin-bottom:10px;}
+.stat-val{font-family:var(--font-m);font-size:24px;font-weight:700;line-height:1;margin-bottom:5px;letter-spacing:-.02em;}
+.sc-0 .stat-val{color:var(--azure-l);}
+.sc-1 .stat-val{color:var(--mint);}
+.sc-2 .stat-val{color:var(--electric);}
+.sc-3 .stat-val{color:#a78bfa;}
+.sc-4 .stat-val{color:#f472b6;}
+.stat-lbl{font-family:var(--font-m);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--t3);}
+.stat-delta{position:absolute;top:16px;right:14px;font-family:var(--font-m);font-size:9px;padding:3px 9px;border-radius:100px;letter-spacing:.06em;}
+.d-good{background:rgba(0,229,160,.1);color:var(--mint);border:1px solid rgba(0,229,160,.28);}
+.d-warn{background:rgba(250,204,21,.1);color:#facc15;border:1px solid rgba(250,204,21,.2);}
+.d-bad{background:rgba(255,107,122,.1);color:#ff6b7a;border:1px solid rgba(255,107,122,.2);}
+.d-neu{background:rgba(0,207,255,.08);color:var(--electric);border:1px solid var(--border2);}
+
+/* CHART GRID */
+.chart-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;}
+.chart-grid.full{grid-template-columns:1fr;}
+@media(max-width:900px){.chart-grid{grid-template-columns:1fr;}}
+.chart-card{background:linear-gradient(148deg,var(--navy3),var(--navy2));border:1px solid var(--border);border-radius:14px;padding:22px;animation:fadeUp .6s both;transition:border-color .22s,box-shadow .22s;}
+.chart-card:hover{border-color:rgba(0,207,255,.2);box-shadow:0 0 36px rgba(0,207,255,.05);}
+.chart-hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;}
+.chart-title{font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--t1);letter-spacing:-.01em;}
+.chart-sub{font-family:var(--font-m);font-size:9px;color:var(--t3);margin-top:3px;letter-spacing:.06em;}
+.chart-tag{font-family:var(--font-m);font-size:8px;letter-spacing:.12em;padding:3px 9px;border-radius:100px;background:rgba(0,207,255,.08);color:var(--electric);border:1px solid rgba(0,207,255,.2);text-transform:uppercase;white-space:nowrap;}
+canvas.chart-canvas{max-height:280px;}
+
+/* TABLE */
+.table-wrap{background:linear-gradient(148deg,var(--navy3),var(--navy2));border:1px solid var(--border);border-radius:14px;overflow:hidden;animation:fadeUp .7s .15s both;}
+table{width:100%;border-collapse:collapse;}
+thead tr{background:rgba(2,8,16,.6);border-bottom:1px solid var(--border);}
+thead th{text-align:left;padding:13px 18px;font-family:var(--font-m);font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--azure-l);font-weight:400;}
+tbody tr{border-bottom:1px solid rgba(16,96,240,.07);transition:background .15s;}
+tbody tr:last-child{border-bottom:none;}
+tbody tr:hover{background:rgba(16,96,240,.06);}
+td{padding:13px 18px;font-size:13px;color:var(--t2);}
+.bar-cell{display:flex;align-items:center;gap:9px;}
+.mini-bar{flex:1;height:3px;background:rgba(16,96,240,.12);border-radius:3px;overflow:hidden;max-width:80px;}
+.mini-bar-fill{height:100%;border-radius:3px;}
+.grade-badge{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;font-family:var(--font-m);font-size:10px;font-weight:700;}
+
+/* REPORT */
+.report-card{background:linear-gradient(148deg,var(--navy3),var(--navy2));border:1px solid rgba(0,207,255,.18);border-radius:14px;padding:26px;position:relative;overflow:hidden;animation:fadeUp .8s .25s both;}
+.report-card::before{content:'';position:absolute;top:0;left:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--azure-m),var(--electric));border-radius:3px 0 0 3px;}
+.report-hdr{display:flex;align-items:center;gap:12px;margin-bottom:18px;}
+.ai-badge{display:flex;align-items:center;gap:7px;background:rgba(16,96,240,.1);border:1px solid rgba(61,127,255,.28);padding:5px 14px;border-radius:100px;font-family:var(--font-m);font-size:9px;color:var(--azure-l);letter-spacing:.1em;text-transform:uppercase;}
+.ai-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--electric);box-shadow:0 0 7px var(--electric);animation:pulse 2s ease-in-out infinite;}
+#reportTime{font-family:var(--font-m);font-size:9px;color:var(--t4);letter-spacing:.1em;}
+#report{font-size:13.5px;color:var(--t2);line-height:1.9;white-space:pre-wrap;}
+
+footer{text-align:center;padding:28px 0 0;margin-top:40px;font-family:var(--font-m);font-size:9px;color:var(--t4);letter-spacing:.14em;text-transform:uppercase;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="ld-logo">✦ ScholarSync · Performance Intelligence</div>
+  <div class="ld-bar-wrap"><div class="ld-bar-fill"></div></div>
+  <div class="ld-msg" id="loaderMsg">Connecting to student portal…</div>
+</div>
+
+<div class="wrapper" id="mainContent" style="display:none">
+
+  <header class="dash-header">
+    <div class="dh-logo">
+      <div class="dh-hex"></div><div class="dh-hex2"></div><div class="dh-dot"></div>
+    </div>
+    <div class="dh-text">
+      <div class="dh-title">Performance Dashboard</div>
+      <div class="dh-sub">Analysis Agent · Live Data</div>
+    </div>
+    <div class="dh-badges">
+      <div class="dh-badge"><span id="semBadge-text">Loading…</span></div>
+      <div class="dh-badge live"><div class="live-dot"></div>Live</div>
+    </div>
+  </header>
+
+  <div id="errorBox">
+    <h3>⚠ Could not load student data</h3>
+    <p>Make sure this page is served via your FastAPI server at the same origin as <code>/analysis</code>.</p>
+    <code id="errorDetail"></code>
+  </div>
+
+  <div class="sec-title">Overview Metrics</div>
+  <div class="stats-row" id="statsRow"></div>
+
+  <div class="sec-title">Academic Performance</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-hdr"><div><div class="chart-title">Average Marks</div><div class="chart-sub">Per subject · color = risk level</div></div><span class="chart-tag">Line</span></div>
+      <canvas id="marksChart" class="chart-canvas"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-hdr"><div><div class="chart-title">Grade Distribution</div><div class="chart-sub">Pass / Average / At Risk</div></div><span class="chart-tag">Pie</span></div>
+      <canvas id="gradeChart" class="chart-canvas"></canvas>
+    </div>
+  </div>
+  <div class="chart-grid" style="margin-top:16px">
+    <div class="chart-card">
+      <div class="chart-hdr"><div><div class="chart-title">Attendance Rate</div><div class="chart-sub">Green ≥80% · Amber 70–79% · Red &lt;70%</div></div><span class="chart-tag">Bar</span></div>
+      <canvas id="attendanceChart" class="chart-canvas"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-hdr"><div><div class="chart-title">Quiz Avg Distribution</div><div class="chart-sub">Share of quiz performance per subject</div></div><span class="chart-tag">Doughnut</span></div>
+      <canvas id="doughnutChart" class="chart-canvas"></canvas>
+    </div>
+  </div>
+
+  <div class="sec-title">Quiz &amp; Skill Analysis</div>
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-hdr"><div><div class="chart-title">Skill Radar</div><div class="chart-sub">Marks · Attendance · Quiz Avg</div></div><span class="chart-tag">Radar</span></div>
+      <canvas id="radarChart" class="chart-canvas"></canvas>
+    </div>
+    <div class="chart-card">
+      <div class="chart-hdr"><div><div class="chart-title">All Quiz Scores</div><div class="chart-sub">Every quiz per subject side by side</div></div><span class="chart-tag">Grouped</span></div>
+      <canvas id="quizChart" class="chart-canvas"></canvas>
+    </div>
+  </div>
+  <div class="chart-grid full" style="margin-top:16px">
+    <div class="chart-card">
+      <div class="chart-hdr"><div><div class="chart-title">Subject Mastery Index</div><div class="chart-sub">Composite: marks 50% + quiz 30% + attendance 20%</div></div><span class="chart-tag">Polar</span></div>
+      <canvas id="polarChart" class="chart-canvas" style="max-height:320px"></canvas>
+    </div>
+  </div>
+
+  <div class="sec-title">Subject Breakdown</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Subject</th><th>Avg Marks</th><th>Attendance</th><th>Quiz Avg</th><th>Progress</th><th>Grade</th></tr></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div class="sec-title">AI Study Analysis</div>
+  <div class="report-card">
+    <div class="report-hdr">
+      <div class="ai-badge"><div class="ai-badge-dot"></div>Analysis Agent</div>
+      <span id="reportTime"></span>
+    </div>
+    <div id="report"></div>
+  </div>
+
+  <footer>ScholarSync · Performance Intelligence Platform · <span id="yr"></span></footer>
+</div>
+
+<script>
+function stripMarkdown(text){return text.replace(/\*\*(.*?)\*\*/g,'$1').replace(/\*(.*?)\*/g,'$1').replace(/#{1,6}\s?/g,'').replace(/`{1,3}[^`]*`{1,3}/g,'').trim();}
+function abbrev(s){if(s.length<=16)return s;return s.split(' ').filter(w=>w.length>2).map(w=>w[0].toUpperCase()).join('');}
+
+Chart.defaults.color='#426080';
+Chart.defaults.borderColor='rgba(16,96,240,0.1)';
+Chart.defaults.font.family="'SF Pro Text',-apple-system,'Segoe UI',system-ui,sans-serif";
+const C=['#3d7fff','#00cfff','#00e5a0','#a78bfa','#f472b6','#facc15'];
+
+function render(json){
+  const data=json.data, analysis=json.analysis||'';
+  const subjects=data.map(d=>d.subject), labels=data.map(d=>abbrev(d.subject));
+  const marks=data.map(d=>Number(d.average_marks)), attend=data.map(d=>Number(d.attendance));
+  const numQuizzes=Math.max(...data.map(d=>d.quizzes.length));
+  const quizAvg=data.map(d=>Math.round(d.quizzes.reduce((a,b)=>a+b,0)/d.quizzes.length));
+  const quizSets=Array.from({length:numQuizzes},(_,i)=>data.map(d=>d.quizzes[i]??null));
+  const mastery=data.map((d,i)=>Math.round(marks[i]*0.5+quizAvg[i]*0.3+attend[i]*0.2));
+  const overallMark=Math.round(marks.reduce((a,b)=>a+b)/marks.length);
+  const overallAtt=Math.round(attend.reduce((a,b)=>a+b)/attend.length);
+  const overallQuiz=Math.round(quizAvg.reduce((a,b)=>a+b)/quizAvg.length);
+  const bestIdx=marks.indexOf(Math.max(...marks)), worstIdx=marks.indexOf(Math.min(...marks));
+
+  document.getElementById('semBadge-text').textContent=`${subjects.length} Subjects`;
+  document.getElementById('reportTime').textContent=`Generated · ${new Date().toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'})}`;
+  document.getElementById('yr').textContent=new Date().getFullYear();
+
+  const dc=(v,g,w)=>v>=g?'d-good':v>=w?'d-warn':'d-bad';
+  const sData=[
+    {icon:'🎯',val:`${overallMark}%`,lbl:'Avg Marks',delta:overallMark>=70?'✓ Good':'⚠ Low',cls:dc(overallMark,70,55),sc:'sc-0'},
+    {icon:'📅',val:`${overallAtt}%`,lbl:'Avg Attendance',delta:overallAtt>=80?'✓ Safe':overallAtt>=70?'⚠ Risk':'↓ Low',cls:dc(overallAtt,80,70),sc:'sc-1'},
+    {icon:'🧠',val:`${overallQuiz}%`,lbl:'Quiz Avg',delta:overallQuiz>=70?'✓ Good':'⚠ Low',cls:dc(overallQuiz,70,55),sc:'sc-2'},
+    {icon:'🏆',val:abbrev(subjects[bestIdx]),lbl:'Top Subject',delta:'#1',cls:'d-good',sc:'sc-3'},
+    {icon:'⚠',val:abbrev(subjects[worstIdx]),lbl:'Needs Focus',delta:'Low',cls:'d-bad',sc:'sc-4'},
+  ];
+  document.getElementById('statsRow').innerHTML=sData.map((s,i)=>`
+    <div class="stat-card ${s.sc}" style="animation-delay:${i*0.08}s">
+      <div class="stat-icon">${s.icon}</div>
+      <div class="stat-val">${s.val}</div>
+      <div class="stat-lbl">${s.lbl}</div>
+      <div class="stat-delta ${s.cls}">${s.delta}</div>
+    </div>`).join('');
+
+  const shared={responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:'#8aaed4',boxRadius:4,padding:14,font:{size:11}}}}};
+  const tip=items=>subjects[items[0].dataIndex];
+  const yAxis=(mn=30)=>({
+    x:{ticks:{color:'#426080'},grid:{color:'rgba(16,96,240,0.07)'}},
+    y:{min:mn,max:100,ticks:{color:'#426080',callback:v=>v+'%'},grid:{color:'rgba(16,96,240,0.07)'}}
+  });
+
+  new Chart(document.getElementById('marksChart'),{type:'line',data:{labels,datasets:[{label:'Avg Marks',data:marks,borderColor:'#3d7fff',backgroundColor:'rgba(61,127,255,0.07)',pointBackgroundColor:marks.map(m=>m>=70?'#00e5a0':m>=55?'#facc15':'#ff6b7a'),pointRadius:7,pointHoverRadius:10,borderWidth:2.5,tension:0.4,fill:true}]},options:{...shared,plugins:{...shared.plugins,tooltip:{callbacks:{title:tip}}},scales:yAxis(30)}});
+
+  const gA=marks.filter(m=>m>=70).length,gB=marks.filter(m=>m>=55&&m<70).length,gC=marks.filter(m=>m<55).length;
+  new Chart(document.getElementById('gradeChart'),{type:'pie',data:{labels:[`Pass ≥70 (${gA})`,`Average 55–69 (${gB})`,`At Risk <55 (${gC})`],datasets:[{data:[gA,gB,gC],backgroundColor:['#00e5a0','#3d7fff','#ff6b7a'],borderColor:'#08152a',borderWidth:3}]},options:{...shared}});
+
+  new Chart(document.getElementById('attendanceChart'),{type:'bar',data:{labels,datasets:[{label:'Attendance %',data:attend,backgroundColor:attend.map(a=>a>=80?'#00e5a0bb':a>=70?'#facc15bb':'#ff6b7abb'),borderColor:attend.map(a=>a>=80?'#00e5a0':a>=70?'#facc15':'#ff6b7a'),borderWidth:1.5,borderRadius:7,borderSkipped:false}]},options:{...shared,plugins:{...shared.plugins,tooltip:{callbacks:{title:tip}}},scales:{x:{ticks:{color:'#426080'},grid:{display:false}},y:{min:50,max:100,ticks:{color:'#426080',callback:v=>v+'%'},grid:{color:'rgba(16,96,240,0.07)'}}}}});
+
+  new Chart(document.getElementById('doughnutChart'),{type:'doughnut',data:{labels:subjects,datasets:[{data:quizAvg,backgroundColor:C.map(c=>c+'bb'),borderColor:'#08152a',borderWidth:3,hoverOffset:10}]},options:{...shared,cutout:'65%'}});
+
+  new Chart(document.getElementById('radarChart'),{type:'radar',data:{labels,datasets:[{label:'Marks',data:marks,borderColor:'#3d7fff',backgroundColor:'rgba(61,127,255,0.1)',pointBackgroundColor:'#3d7fff',borderWidth:2},{label:'Attendance',data:attend,borderColor:'#00e5a0',backgroundColor:'rgba(0,229,160,0.08)',pointBackgroundColor:'#00e5a0',borderWidth:2},{label:'Quiz Avg',data:quizAvg,borderColor:'#00cfff',backgroundColor:'rgba(0,207,255,0.08)',pointBackgroundColor:'#00cfff',borderWidth:2}]},options:{...shared,scales:{r:{angleLines:{color:'rgba(16,96,240,0.12)'},grid:{color:'rgba(16,96,240,0.1)'},pointLabels:{color:'#8aaed4',font:{size:11}},ticks:{display:false,backdropColor:'transparent'},min:30,max:100}}}});
+
+  const qColors=['#3d7fff','#00cfff','#00e5a0','#a78bfa','#f472b6','#facc15'];
+  new Chart(document.getElementById('quizChart'),{type:'bar',data:{labels,datasets:quizSets.map((qdata,i)=>({label:`Quiz ${i+1}`,data:qdata,backgroundColor:qColors[i]+'bb',borderColor:qColors[i],borderWidth:1.5,borderRadius:5,borderSkipped:false}))},options:{...shared,plugins:{...shared.plugins,tooltip:{callbacks:{title:tip}}},scales:yAxis(30)}});
+
+  new Chart(document.getElementById('polarChart'),{type:'polarArea',data:{labels:subjects,datasets:[{data:mastery,backgroundColor:C.map(c=>c+'99'),borderColor:C,borderWidth:2}]},options:{...shared,scales:{r:{ticks:{backdropColor:'transparent',color:'#426080',font:{size:10}},grid:{color:'rgba(16,96,240,0.1)'},min:30,max:100}}}});
+
+  const tbody=document.getElementById('tableBody');
+  data.forEach((d,i)=>{
+    const avg=quizAvg[i],m=marks[i],pct=Math.max(0,Math.round((m-30)/70*100));
+    const grade=m>=70?'A':m>=55?'B':'C';
+    const gc=grade==='A'?'#00e5a0':grade==='B'?'#3d7fff':'#ff6b7a';
+    const ac=d.attendance>=80?'#00e5a0':d.attendance>=70?'#facc15':'#ff6b7a';
+    tbody.innerHTML+=`<tr>
+      <td style="color:var(--t1);font-weight:500" title="${d.subject}">${d.subject}</td>
+      <td style="color:${C[i%C.length]};font-family:var(--font-m);font-weight:700">${m}%</td>
+      <td style="color:${ac};font-family:var(--font-m)">${d.attendance}%</td>
+      <td style="font-family:var(--font-m)">${avg}%</td>
+      <td class="bar-cell"><div class="mini-bar"><div class="mini-bar-fill" style="width:${pct}%;background:${C[i%C.length]}"></div></div><span style="font-family:var(--font-m);font-size:11px;color:var(--t3)">${m}%</span></td>
+      <td><span class="grade-badge" style="background:${gc}18;color:${gc};border:1px solid ${gc}44">${grade}</span></td>
+    </tr>`;
+  });
+
+  document.getElementById('report').textContent=stripMarkdown(analysis);
+}
+
+async function load(){
+  document.getElementById('loaderMsg').textContent='Fetching live data from /analysis…';
+  try{
+    const res=await fetch('/analysis');
+    if(!res.ok)throw new Error(`HTTP ${res.status} — ${res.statusText}`);
+    const json=await res.json();
+    document.getElementById('loaderMsg').textContent='Rendering charts…';
+    render(json);
+    document.getElementById('mainContent').style.display='block';
+  }catch(err){
+    document.getElementById('errorBox').style.display='block';
+    document.getElementById('errorDetail').textContent=`Error: ${err.message}\nMake sure this file is served from your FastAPI server.`;
+    document.getElementById('mainContent').style.display='block';
+  }finally{
+    setTimeout(()=>{
+      const l=document.getElementById('loader');
+      l.classList.add('hidden');
+      setTimeout(()=>l.style.display='none',500);
+    },300);
+  }
+}
+load();
+</script>
+</body>
+</html>

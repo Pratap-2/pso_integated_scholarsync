@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarSync — Assignment Solver</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --navy:     #020810;
+  --navy1:    #050d1c;
+  --navy2:    #08152a;
+  --navy3:    #0c1d3a;
+  --navy4:    #102448;
+  --azure:    #1060f0;
+  --azure-m:  #3d7fff;
+  --azure-l:  #6aa0ff;
+  --azure-xl: #9dc4ff;
+  --electric: #00cfff;
+  --mint:     #00e5a0;
+  --border:   rgba(16,96,240,.14);
+  --border2:  rgba(0,207,255,.18);
+  --t1: #edf4ff;
+  --t2: #8aaed4;
+  --t3: #426080;
+  --t4: #1a3050;
+  --font-d: 'SF Pro Display', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --font-b: 'SF Pro Text', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --font-m: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+}
+
+html, body {
+  height: 100%; background: var(--navy); color: var(--t1);
+  font-family: var(--font-b); line-height: 1.6; overflow: hidden;
+}
+
+/* scrollbar */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(16,96,240,.25); border-radius: 3px; }
+
+/* ── Keyframes ── */
+@keyframes spin    { to { transform: rotate(360deg); } }
+@keyframes spinR   { to { transform: rotate(-360deg); } }
+@keyframes breathe { 0%,100%{transform:scale(1);opacity:.6} 50%{transform:scale(1.12);opacity:1} }
+@keyframes pulse   { 0%,100%{opacity:1} 50%{opacity:.18} }
+@keyframes ping    { 0%{transform:scale(1);opacity:.9} 80%{transform:scale(2.4);opacity:0} 100%{opacity:0} }
+@keyframes fadeUp  { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:none} }
+@keyframes shimmer { 0%{left:-120%} 100%{left:220%} }
+@keyframes gridMove { to { background-position: 64px 64px; } }
+@keyframes dotBounce {
+  0%,80%,100% { transform: translateY(0); opacity: .4; }
+  40%         { transform: translateY(-7px); opacity: 1; }
+}
+@keyframes slideIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:none} }
+
+/* ── Background ── */
+.bg-layer {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 60% at 70% 10%, rgba(16,96,240,.07) 0%, transparent 55%),
+    radial-gradient(ellipse 60% 80% at 5%  90%, rgba(0,207,255,.05) 0%, transparent 55%),
+    var(--navy);
+}
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(16,96,240,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16,96,240,.03) 1px, transparent 1px);
+  background-size: 64px 64px;
+  animation: gridMove 45s linear infinite;
+}
+
+/* ── Layout Shell ── */
+.shell {
+  position: relative; z-index: 1;
+  display: flex; flex-direction: column;
+  height: 100vh; overflow: hidden;
+}
+
+/* ── Header bar ── */
+.header {
+  flex-shrink: 0;
+  display: flex; align-items: center; gap: 14px;
+  padding: 0 26px; height: 58px;
+  background: rgba(2,8,16,.95); backdrop-filter: blur(28px);
+  border-bottom: 1px solid var(--border);
+  position: relative; z-index: 10;
+}
+.header::after {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--azure-m) 30%, var(--electric) 70%, transparent);
+  opacity: .28;
+}
+.hdr-logo {
+  position: relative; width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.hdr-hex  { position: absolute; inset: 0; border-radius: 8px; border: 1px solid rgba(16,96,240,.4); background: rgba(16,96,240,.08); transform: rotate(12deg); }
+.hdr-hex2 { position: absolute; inset: 4px; border-radius: 5px; border: 1px solid rgba(0,207,255,.25); background: rgba(0,207,255,.05); transform: rotate(-12deg); animation: spinR 20s linear infinite; }
+.hdr-dot  { position: relative; z-index: 2; width: 7px; height: 7px; border-radius: 50%; background: var(--electric); box-shadow: 0 0 10px var(--electric); animation: breathe 3s ease-in-out infinite; }
+.hdr-title {
+  font-family: var(--font-d); font-weight: 800; font-size: 16px; letter-spacing: -.03em;
+  background: linear-gradient(110deg, #fff 20%, var(--azure-l) 60%, var(--electric) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.hdr-sub { font-family: var(--font-m); font-size: 9px; color: var(--t2); letter-spacing: .1em; text-transform: uppercase; margin-top: 1px; }
+.hdr-badge {
+  display: flex; align-items: center; gap: 6px; margin-left: auto;
+  padding: 4px 12px; border-radius: 100px;
+  background: rgba(0,207,255,.06); border: 1px solid rgba(0,207,255,.2);
+  font-family: var(--font-m); font-size: 8px; color: var(--electric);
+  letter-spacing: .1em; text-transform: uppercase;
+}
+.hdr-badge-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--mint); box-shadow: 0 0 7px var(--mint);
+  animation: pulse 2.5s ease-in-out infinite;
+}
+
+/* ── Body ── */
+.body {
+  flex: 1; display: flex; overflow: hidden;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: 272px; min-width: 272px; flex-shrink: 0;
+  display: flex; flex-direction: column;
+  background: rgba(5,13,28,.98); border-right: 1px solid var(--border);
+  position: relative; overflow: hidden;
+}
+.sidebar::after {
+  content: ''; position: absolute; top: 0; right: 0; width: 1px; height: 100%;
+  background: linear-gradient(to bottom, transparent, var(--azure-m) 30%, var(--electric) 70%, transparent);
+  opacity: .15;
+}
+.sb-head {
+  padding: 16px 16px 13px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.sb-kicker {
+  font-family: var(--font-m); font-size: 9px; letter-spacing: .2em;
+  text-transform: uppercase; color: var(--azure-l); opacity: .9; margin-bottom: 11px;
+}
+.sb-head-row {
+  display: flex; align-items: center; gap: 8px;
+}
+.sb-icon {
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(16,96,240,.2), rgba(0,207,255,.1));
+  border: 1px solid rgba(16,96,240,.28);
+  display: flex; align-items: center; justify-content: center;
+}
+.sb-label {
+  font-family: var(--font-d); font-size: 13px; font-weight: 700;
+  color: var(--t1); letter-spacing: -.01em;
+}
+.sb-list-hdr {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 11px 16px 6px; flex-shrink: 0;
+}
+.sb-list-lbl { font-family: var(--font-m); font-size: 9px; letter-spacing: .15em; text-transform: uppercase; color: var(--azure-xl); opacity: .9; }
+.sb-list-ct {
+  font-family: var(--font-m); font-size: 9px; color: var(--electric);
+  background: rgba(0,207,255,.1); border: 1px solid rgba(0,207,255,.28);
+  padding: 2px 9px; border-radius: 100px;
+}
+.sb-scroll {
+  flex: 1; overflow-y: auto; padding: 4px 10px 14px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+
+/* loading state */
+.sb-loading {
+  display: flex; align-items: center; gap: 10px;
+  padding: 18px 8px;
+  font-family: var(--font-m); font-size: 11px; color: var(--t3);
+}
+.sb-spinner {
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 1.5px solid rgba(16,96,240,.2); border-top-color: var(--azure-m);
+  animation: spin .7s linear infinite; flex-shrink: 0;
+}
+
+/* assignment card in sidebar */
+.asgn-card {
+  padding: 11px 12px; border-radius: 11px;
+  background: rgba(16,96,240,.06); border: 1px solid rgba(16,96,240,.13);
+  cursor: pointer; transition: all .2s; position: relative; overflow: hidden;
+  animation: fadeUp .22s ease both;
+}
+.asgn-card::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(to bottom, var(--azure-m), var(--electric));
+  border-radius: 3px 0 0 3px; opacity: 0; transition: opacity .18s;
+}
+.asgn-card:hover { background: rgba(16,96,240,.13); border-color: rgba(61,127,255,.35); transform: translateX(2px); }
+.asgn-card:hover::before { opacity: 1; }
+.asgn-card.active { background: rgba(16,96,240,.18); border-color: rgba(0,207,255,.3); }
+.asgn-card.active::before { opacity: 1; }
+.asgn-card h4 {
+  font-family: var(--font-b); font-size: 12.5px; font-weight: 600;
+  color: #d0e8ff; line-height: 1.4; margin-bottom: 7px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.asgn-tag {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(16,96,240,.12); border: 1px solid rgba(61,127,255,.22);
+  border-radius: 100px; padding: 2px 9px;
+  font-family: var(--font-m); font-size: 9px; color: var(--azure-l);
+  letter-spacing: .05em;
+}
+.asgn-card.active .asgn-tag { background: rgba(0,207,255,.1); border-color: rgba(0,207,255,.3); color: var(--electric); }
+
+/* ── Main Panel ── */
+.main {
+  flex: 1; display: flex; flex-direction: column;
+  overflow: hidden; background: var(--navy1);
+}
+
+/* empty state */
+.empty-state {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 48px 32px;
+  animation: fadeUp .4s ease both;
+}
+.empty-orb {
+  position: relative; width: 72px; height: 72px; margin-bottom: 22px;
+}
+.eo-core {
+  position: absolute; inset: 14px; border-radius: 50%;
+  background: radial-gradient(circle at 38% 35%, rgba(0,207,255,.55), rgba(16,96,240,.3) 50%, transparent);
+  filter: blur(2px); animation: breathe 4s ease-in-out infinite;
+}
+.eo-r1 { position: absolute; inset: 4px; border-radius: 50%; border: 1px solid rgba(16,96,240,.35); animation: spin 8s linear infinite; }
+.eo-r2 { position: absolute; inset: -2px; border-radius: 50%; border: 1px solid rgba(0,207,255,.18); animation: spinR 14s linear infinite; }
+.eo-r1::before, .eo-r2::before {
+  content: ''; position: absolute; top: -3px; left: 50%; transform: translateX(-50%);
+  width: 5px; height: 5px; border-radius: 50%;
+}
+.eo-r1::before { background: var(--azure-m); box-shadow: 0 0 8px var(--azure-m); }
+.eo-r2::before { background: var(--electric); box-shadow: 0 0 8px var(--electric); width: 4px; height: 4px; }
+.empty-title {
+  font-family: var(--font-d); font-size: 18px; font-weight: 800;
+  background: linear-gradient(135deg, #fff, var(--azure-l) 55%, var(--electric));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  margin-bottom: 8px; letter-spacing: -.02em;
+}
+.empty-sub { font-size: 13px; color: var(--t2); max-width: 320px; line-height: 1.75; margin-bottom: 20px; }
+.empty-hint {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: rgba(16,96,240,.1); border: 1px solid rgba(61,127,255,.28);
+  border-radius: 100px; padding: 7px 16px;
+  font-family: var(--font-m); font-size: 10px; color: var(--azure-l); letter-spacing: .08em;
+}
+.empty-hint-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--electric); box-shadow: 0 0 6px var(--electric); animation: pulse 2s ease-in-out infinite; }
+
+/* active assignment panel */
+.work-panel {
+  flex: 1; display: none; flex-direction: column; overflow: hidden;
+}
+.work-panel.visible { display: flex; }
+
+/* assignment info strip */
+.asgn-strip {
+  flex-shrink: 0; padding: 14px 24px;
+  background: rgba(2,8,16,.8); border-bottom: 1px solid var(--border);
+  display: flex; align-items: flex-start; gap: 13px;
+}
+.asgn-strip::before {
+  content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--azure-m) 50%, transparent);
+  opacity: .2;
+}
+.strip-icon {
+  width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(16,96,240,.18), rgba(0,207,255,.1));
+  border: 1px solid rgba(16,96,240,.28);
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.strip-text { flex: 1; min-width: 0; }
+.strip-kicker { font-family: var(--font-m); font-size: 8px; letter-spacing: .18em; text-transform: uppercase; color: var(--azure-l); opacity: .8; margin-bottom: 3px; }
+#title {
+  font-family: var(--font-d); font-size: 15px; font-weight: 700;
+  color: var(--t1); letter-spacing: -.02em; line-height: 1.3;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 4px;
+}
+#desc { font-size: 12px; color: var(--t2); line-height: 1.6; }
+
+/* scrollable content */
+.work-scroll {
+  flex: 1; overflow-y: auto; padding: 20px 24px; display: flex; flex-direction: column; gap: 14px;
+}
+
+/* section card (question + answer) */
+.section-card {
+  background: linear-gradient(148deg, var(--navy3), var(--navy2));
+  border: 1px solid var(--border); border-radius: 14px;
+  overflow: hidden; animation: slideIn .25s ease both;
+}
+.sc-head {
+  display: flex; align-items: center; gap: 9px;
+  padding: 11px 16px; border-bottom: 1px solid var(--border);
+  background: rgba(2,8,16,.5);
+}
+.sc-head-dot { width: 7px; height: 7px; border-radius: 50%; }
+.sc-head-dot.blue { background: var(--azure-m); box-shadow: 0 0 7px var(--azure-m); }
+.sc-head-dot.cyan { background: var(--electric); box-shadow: 0 0 7px var(--electric); position: relative; }
+.sc-head-dot.cyan::after { content: ''; position: absolute; inset: 0; border-radius: 50%; animation: ping 2s ease-out infinite; background: inherit; }
+.sc-head-lbl { font-family: var(--font-m); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--azure-l); }
+.sc-body { padding: 16px; }
+
+/* textarea */
+#question {
+  width: 100%; background: rgba(2,8,16,.6); border: 1px solid var(--border2);
+  color: var(--t1); font-family: var(--font-b); font-size: 13.5px;
+  padding: 13px 16px; border-radius: 10px; outline: none;
+  caret-color: var(--azure-m); resize: vertical; min-height: 96px;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+  line-height: 1.65;
+}
+#question::placeholder { color: var(--t4); }
+#question:focus { border-color: rgba(16,96,240,.42); background: rgba(8,21,42,.8); box-shadow: 0 0 0 3px rgba(16,96,240,.07); }
+
+/* button row */
+.btn-row { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 13px; }
+
+.ss-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--font-d); font-size: 12px; font-weight: 700;
+  letter-spacing: .04em; padding: 10px 20px; border-radius: 10px;
+  border: none; cursor: pointer; transition: all .2s; position: relative; overflow: hidden;
+}
+.ss-btn .btn-shim {
+  position: absolute; top: 0; left: -120%; width: 55%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.07), transparent);
+  transition: left .35s;
+}
+.ss-btn:hover .btn-shim { left: 220%; }
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--azure), #0044cc);
+  color: #fff; border: 1px solid rgba(16,96,240,.35);
+  box-shadow: 0 0 22px rgba(16,96,240,.28);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(16,96,240,.45); }
+.btn-primary:active { transform: none; }
+
+.btn-teal {
+  background: linear-gradient(135deg, #0891b2, #0369a1);
+  color: #fff; border: 1px solid rgba(8,145,178,.35);
+  box-shadow: 0 0 18px rgba(8,145,178,.2);
+}
+.btn-teal:hover { transform: translateY(-2px); box-shadow: 0 6px 26px rgba(8,145,178,.38); }
+.btn-teal:active { transform: none; }
+
+.btn-ghost {
+  background: rgba(16,96,240,.09); color: var(--azure-l);
+  border: 1px solid rgba(61,127,255,.28);
+}
+.btn-ghost:hover { background: rgba(16,96,240,.17); border-color: rgba(61,127,255,.5); transform: translateY(-1px); }
+.btn-ghost:active { transform: none; }
+
+/* chat bubbles */
+.chat-msg {
+  display: flex; flex-direction: column; max-width: 85%;
+  animation: slideIn .2s ease both; margin-bottom: 2px;
+}
+.chat-msg.user { align-self: flex-end; }
+.chat-msg.agent { align-self: flex-start; }
+.bubble-hdr {
+  font-family: var(--font-m); font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: var(--t3); margin-bottom: 6px;
+}
+.chat-msg.user .bubble-hdr { text-align: right; }
+.bubble {
+  padding: 12px 16px; border-radius: 12px; font-size: 13.5px; line-height: 1.6;
+}
+.chat-msg.user .bubble {
+  background: rgba(16,96,240,.15); border: 1px solid rgba(61,127,255,.3); color: var(--t1); border-bottom-right-radius: 2px;
+}
+.chat-msg.agent .bubble {
+  background: rgba(2,8,16,.5); border: 1px solid var(--border); color: var(--t2); border-bottom-left-radius: 2px; white-space: pre-wrap;
+}
+
+/* thinking dots */
+.thinking-wrap {
+  display: flex; align-items: center; gap: 12px;
+  padding: 18px 20px;
+}
+.thinking-label { font-family: var(--font-m); font-size: 11px; color: var(--azure-l); letter-spacing: .1em; text-transform: uppercase; }
+.thinking-dots { display: flex; align-items: center; gap: 5px; }
+.thinking-dots span {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--azure-m);
+  animation: dotBounce 1.2s ease-in-out infinite;
+}
+.thinking-dots span:nth-child(1) { animation-delay: 0s; background: var(--azure-m); box-shadow: 0 0 6px var(--azure-m); }
+.thinking-dots span:nth-child(2) { animation-delay: .2s; background: var(--azure-l); }
+.thinking-dots span:nth-child(3) { animation-delay: .4s; background: var(--electric); box-shadow: 0 0 6px var(--electric); }
+
+/* no-assignments message */
+.no-asgn {
+  padding: 22px 10px; text-align: center;
+  font-family: var(--font-m); font-size: 11px; color: var(--t3); line-height: 1.65;
+}
+</style>
+</head>
+<body>
+
+<div class="bg-layer"></div>
+<div class="bg-grid"></div>
+
+<div class="shell">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="hdr-logo">
+      <div class="hdr-hex"></div>
+      <div class="hdr-hex2"></div>
+      <div class="hdr-dot"></div>
+    </div>
+    <div>
+      <div class="hdr-title">Assignment Solver</div>
+      <div class="hdr-sub">Solver Agent · AI-Powered</div>
+    </div>
+    <div class="hdr-badge">
+      <div class="hdr-badge-dot"></div>
+      Solver Online
+    </div>
+    <button onclick="if(window.parent && window.parent.closeViews){window.parent.closeViews()}else if(history.length>1){history.back()}else{window.location.href='scholar_sync.html'}" style="margin-left:auto;display:flex;align-items:center;gap:7px;padding:7px 15px;background:rgba(16,96,240,.1);border:1px solid rgba(61,127,255,.28);border-radius:8px;color:#6aa0ff;font-size:12px;cursor:pointer;transition:all .2s;font-family:inherit;" onmouseover="this.style.background='rgba(16,96,240,.22)';this.style.borderColor='rgba(61,127,255,.55)'" onmouseout="this.style.background='rgba(16,96,240,.1)';this.style.borderColor='rgba(61,127,255,.28)'">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to Chat
+    </button>
+  </header>
+
+  <!-- Body -->
+  <div class="body">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sb-head">
+        <div class="sb-kicker">Solver Agent</div>
+        <div class="sb-head-row">
+          <div class="sb-icon">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" stroke="#6aa0ff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="sb-label">Your Assignments</div>
+        </div>
+      </div>
+      <div class="sb-list-hdr">
+        <span class="sb-list-lbl">Loaded Tasks</span>
+        <span class="sb-list-ct" id="asgn-count">0</span>
+      </div>
+      <div class="sb-scroll">
+        <div class="sb-loading" id="loading">
+          <div class="sb-spinner"></div>
+          Loading assignments…
+        </div>
+        <div id="assignment-list"></div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+
+      <!-- Empty state -->
+      <div class="empty-state" id="empty-state">
+        <div class="empty-orb">
+          <div class="eo-core"></div>
+          <div class="eo-r1"></div>
+          <div class="eo-r2"></div>
+        </div>
+        <div class="empty-title">No Assignment Selected</div>
+        <p class="empty-sub">Select an assignment from the sidebar to ask questions or generate a complete AI-powered solution.</p>
+        <div class="empty-hint">
+          <div class="empty-hint-dot"></div>
+          Choose an assignment to get started
+        </div>
+      </div>
+
+      <!-- Work panel (shown after selection) -->
+      <div class="work-panel" id="work-panel">
+
+        <!-- Assignment info strip -->
+        <div class="asgn-strip" style="flex-wrap: wrap;">
+          <div class="strip-icon">📋</div>
+          <div class="strip-text" style="flex: 1 1 auto; min-width: 200px;">
+            <div class="strip-kicker">Active Assignment</div>
+            <div id="title">—</div>
+            <div id="desc"></div>
+          </div>
+          <div class="strip-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: auto;">
+            <button class="ss-btn btn-teal" onclick="generateFullSolution()" style="padding: 8px 14px; font-size: 11px;">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" style="margin-right:4px; vertical-align:middle;">
+                <path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M3 7V4a1 1 0 011-1h4l2 3h9a1 1 0 011 1v3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Full Solution
+            </button>
+            <button class="ss-btn btn-ghost" onclick="viewAssignment()" style="padding: 8px 14px; font-size: 11px;">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" style="margin-right:4px; vertical-align:middle;">
+                <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke="#6aa0ff" stroke-width="2"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke="#6aa0ff" stroke-width="2"/>
+              </svg>
+              View Document
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrollable work area -->
+        <div class="work-scroll" id="chat-history">
+          <div style="text-align: center; color: var(--t3); margin: auto;">Ask a question to start the conversation...</div>
+        </div>
+
+        <!-- Chat Input Area -->
+        <div class="chat-input-area" style="padding: 16px 24px; background: rgba(2,8,16,.8); border-top: 1px solid var(--border); display: flex; gap: 10px;">
+          <input type="text" id="question" placeholder="Type your question..." style="flex:1; background: rgba(8,21,42,.8); border: 1px solid var(--border2); color: var(--t1); border-radius: 8px; padding: 10px 14px; outline: none; font-family: var(--font-b); font-size: 13.5px;" onkeypress="if(event.key === 'Enter') askAI()">
+          <button class="ss-btn btn-primary" onclick="askAI()" style="padding: 10px 20px;">
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" style="margin-right:4px; vertical-align:middle;">
+              <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Ask AI
+          </button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+/* ── API CONFIG — unchanged from original ── */
+const BASE_URL        = "http://127.0.0.1:8000";
+const ASSIGNMENTS_API = BASE_URL + "/proxy/assignments";
+const MATERIAL_API    = BASE_URL + "/proxy/materials";
+
+let materialLinks = [];
+let assignmentDoc = null;
+let assignmentId  = null;
+let chatHistory   = [];
+
+/* ── INIT ── */
+async function init() {
+  try {
+    await Promise.all([loadMaterials(), loadAssignments()]);
+  } catch (err) {
+    console.error("Init error:", err);
+  }
+}
+
+/* ── LOAD MATERIALS ── */
+async function loadMaterials() {
+  try {
+    let res = await fetch(MATERIAL_API);
+    if (!res.ok) throw new Error("Materials API failed");
+    let data = await res.json();
+    materialLinks = data.data.map(i => i.materialLink).filter(i => i);
+  } catch (e) {
+    console.error("Material load error:", e);
+  }
+}
+
+/* ── LOAD ASSIGNMENTS ── */
+async function loadAssignments() {
+  try {
+    let res = await fetch(ASSIGNMENTS_API);
+    if (!res.ok) throw new Error("Assignments API failed");
+    let data = await res.json();
+    let list = data?.data?.assignments?.upcoming || [];
+
+    const loadingEl = document.getElementById("loading");
+    if (loadingEl) loadingEl.remove();
+
+    let container = document.getElementById("assignment-list");
+    const countEl = document.getElementById("asgn-count");
+
+    if (list.length === 0) {
+      container.innerHTML = '<div class="no-asgn">No assignments found.</div>';
+      return;
+    }
+
+    if (countEl) countEl.textContent = list.length;
+
+    list.forEach(a => {
+      let div = document.createElement("div");
+      div.className = "asgn-card";
+      div.innerHTML = `
+        <h4>${a.title}</h4>
+        <span class="asgn-tag">
+          <svg width="8" height="8" fill="none" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          ${a.subject.name}
+        </span>
+      `;
+      div.onclick = () => selectAssignment(a, div);
+      container.appendChild(div);
+    });
+
+  } catch (err) {
+    console.error("Assignment load error:", err);
+    const loadingEl = document.getElementById("loading");
+    if (loadingEl) loadingEl.innerHTML = '<div class="no-asgn">Failed to load assignments.</div>';
+  }
+}
+
+/* ── SELECT ASSIGNMENT ── */
+function selectAssignment(a, card) {
+  document.querySelectorAll(".asgn-card").forEach(c => c.classList.remove("active"));
+  card.classList.add("active");
+
+  document.getElementById("title").innerText = a.title;
+  document.getElementById("desc").innerText  = a.description;
+
+  document.getElementById("empty-state").style.display = "none";
+  document.getElementById("work-panel").classList.add("visible");
+
+  chatHistory = [];
+  document.getElementById("chat-history").innerHTML = '<div style="text-align: center; color: var(--t3); margin: auto;">Ask a question to start the conversation...</div>';
+
+  assignmentDoc = a.assignmentDoc;
+  assignmentId  = a._id || a.id || a.title.replace(/\s+/g, "_");
+}
+
+/* ── ASK AI ── */
+async function askAI() {
+  let qInput = document.getElementById("question");
+  let q = qInput.value.trim();
+  if (!q) { alert("Please enter a question"); return; }
+  
+  qInput.value = "";
+  
+  const chatContainer = document.getElementById("chat-history");
+  if(chatHistory.length === 0) chatContainer.innerHTML = "";
+
+  // Append user bubble
+  chatContainer.innerHTML += `
+    <div class="chat-msg user">
+      <div class="bubble-hdr">You</div>
+      <div class="bubble">${q}</div>
+    </div>
+  `;
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  // Append thinking bubble
+  const thinkId = "think-" + Date.now();
+  chatContainer.innerHTML += `
+    <div class="chat-msg agent" id="${thinkId}">
+      <div class="bubble-hdr">Solver Agent</div>
+      <div class="bubble thinking-wrap" style="padding: 10px 16px;">
+        <div class="thinking-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+  `;
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  try {
+    let res = await fetch(BASE_URL + "/solve-assignment", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question: q, history: chatHistory, assignment_doc: assignmentDoc, material_links: materialLinks })
+    });
+    if (!res.ok) throw new Error("AI server error");
+    let data = await res.json();
+    
+    document.getElementById(thinkId).remove();
+
+    chatHistory.push({ role: "user", content: q });
+    chatHistory.push({ role: "assistant", content: data.answer });
+
+    chatContainer.innerHTML += `
+      <div class="chat-msg agent">
+        <div class="bubble-hdr">Solver Agent</div>
+        <div class="bubble">${data.answer}</div>
+      </div>
+    `;
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById(thinkId).remove();
+    chatContainer.innerHTML += `
+      <div class="chat-msg agent">
+        <div class="bubble-hdr">Solver Agent</div>
+        <div class="bubble" style="color: #ff6b7a;">Error contacting AI server. Please try again.</div>
+      </div>
+    `;
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+}
+
+/* ── GENERATE FULL SOLUTION ── */
+async function generateFullSolution() {
+  if (!assignmentDoc) { alert("Please select an assignment first"); return; }
+
+  const chatContainer = document.getElementById("chat-history");
+  if(chatHistory.length === 0) chatContainer.innerHTML = "";
+
+  const thinkId = "think-ans-" + Date.now();
+  chatContainer.innerHTML += `
+    <div class="chat-msg agent" id="${thinkId}">
+      <div class="bubble-hdr">Solver Agent</div>
+      <div class="bubble thinking-wrap" style="padding: 10px 16px;">
+        <div class="thinking-dots"><span></span><span></span><span></span></div>
+        <span class="thinking-label" style="margin-left:12px;">Generating full solution...</span>
+      </div>
+    </div>
+  `;
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+
+  try {
+    let res = await fetch(BASE_URL + "/generate-assignment-pdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assignment_doc: assignmentDoc, material_links: materialLinks, assignment_id: assignmentId })
+    });
+    if (!res.ok) throw new Error("PDF generation failed");
+    const blob = await res.blob();
+    const url  = window.URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `Solved_${assignmentId}.pdf`;
+    document.body.appendChild(a); a.click(); a.remove();
+    
+    document.getElementById(thinkId).remove();
+    chatContainer.innerHTML += `
+      <div class="chat-msg agent">
+        <div class="bubble-hdr">Solver Agent</div>
+        <div class="bubble" style="color: var(--mint);">✦ Solution PDF generated and downloaded successfully.</div>
+      </div>
+    `;
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  } catch (err) {
+    console.error(err);
+    document.getElementById(thinkId).remove();
+    chatContainer.innerHTML += `
+      <div class="chat-msg agent">
+        <div class="bubble-hdr">Solver Agent</div>
+        <div class="bubble" style="color: #ff6b7a;">Failed to generate PDF. Please try again.</div>
+      </div>
+    `;
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  }
+}
+
+/* ── VIEW ASSIGNMENT ── */
+function viewAssignment() {
+  if (!assignmentDoc) { alert("Please select an assignment first"); return; }
+  window.open(assignmentDoc, "_blank");
+}
+
+/* ── START ── */
+window.onload = init;
+</script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+from langchain_core.tools import tool
+import requests
+
+from chatbot.mcp_server.tools.get_subject_professors import get_subject_professors
+
+MCP_URL = "http://127.0.0.1:8002"
+
+
+# ---------------- Helper ----------------
+def call_mcp(endpoint, payload=None):
+
+    try:
+
+        r = requests.post(
+            f"{MCP_URL}{endpoint}",
+            json=payload,
+            timeout=10
+        )
+
+        r.raise_for_status()
+
+        data = r.json()
+
+        # Calendar event response
+        if data.get("status") == "success":
+
+            if "event_url" in data:
+                return (
+                    "✅ Your reminder has been scheduled.\n\n"
+                    f"Open event:\n{data['event_url']}"
+                )
+
+            return data.get("message", "Success")
+
+        # Normal responses
+        if "result" in data:
+            return data["result"]
+
+        return "Tool executed successfully."
+
+    except requests.exceptions.ConnectionError:
+        return "❌ MCP server is not running."
+
+    except Exception as e:
+        return f"MCP tool error: {str(e)}"
+
+
+# ---------------- Calculator ----------------
+@tool
+def calculator(expression: str) -> str:
+    """Calculate mathematical expressions."""
+
+    return call_mcp(
+        "/tools/calculator",
+        {"expression": expression}
+    )
+
+
+# ---------------- Web Search ----------------
+@tool
+def web_search(query: str) -> str:
+    """Search the web."""
+
+    return call_mcp(
+        "/tools/web_search",
+        {"query": query}
+    )
+
+
+# ---------------- Current Time ----------------
+@tool
+def current_time() -> str:
+    """Get system time."""
+
+    return call_mcp("/tools/current_time")
+
+
+# ---------------- Send Email ----------------
+@tool
+def send_email(to: str, subject: str, body: str) -> str:
+    """Send email using SendGrid."""
+
+    return call_mcp(
+        "/tools/send_email",
+        {
+            "to": to,
+            "subject": subject,
+            "body": body
+        }
+    )
+
+
+# ---------------- Create Calendar Event ----------------
+@tool
+def create_calendar_event(title: str, start_time: str, end_time: str) -> str:
+    """Create a Google Calendar event."""
+
+    return call_mcp(
+        "/tools/create_calendar_event",
+        {
+            "title": title,
+            "start_time": start_time,
+            "end_time": end_time
+        }
+    )
+
+
+# ---------------- Delete Calendar Event ----------------
+@tool
+def delete_calendar_event(event_id: str) -> str:
+    """Delete a calendar event by event ID."""
+
+    return call_mcp(
+        "/tools/delete_calendar_event",
+        {
+            "event_id": event_id
+        }
+    )
+
+
+# ---------------- Find Event By Title ----------------
+@tool
+def find_event_by_title(title: str) -> str:
+    """Find calendar events matching a title."""
+
+    return call_mcp(
+        "/tools/find_event_by_title",
+        {
+            "title": title
+        }
+    )
+
+
+# ---------------- Check Calendar Free ----------------
+@tool
+def check_calendar_free(start_time: str, end_time: str) -> str:
+    """Check if a calendar time slot is free."""
+
+    return call_mcp(
+        "/tools/check_calendar_free",
+        {
+            "start_time": start_time,
+            "end_time": end_time
+        }
+    )
+
+
+# ---------------- List Calendar Events ----------------
+@tool
+def list_calendar_events(date: str) -> str:
+    """List all calendar events on a given date (YYYY-MM-DD)."""
+
+    return call_mcp(
+        "/tools/list_calendar_events",
+        {
+            "date": date
+        }
+    )
+
+@tool
+def delete_event_by_title(title: str) -> str:
+    """Delete a calendar event by title."""
+
+    return call_mcp(
+        "/tools/delete_event_by_title",
+        {
+            "title": title
+        }
+    )
+
+
+@tool
+def update_event_by_title(title: str, start_time: str, end_time: str) -> str:
+    """Update a calendar event using its title."""
+
+    return call_mcp(
+        "/tools/update_event_by_title",
+        {
+            "title": title,
+            "start_time": start_time,
+            "end_time": end_time
+        }
+    )
+@tool
+def get_subject_professors():
+    """Fetch all subjects and professor emails from the student portal."""
+
+    r = requests.post(
+        f"{MCP_URL}/tools/get_subject_professors"
+    )
+
+    return r.json()
+
+
+from .tools_integration import get_assignments_tool, get_materials_tool, student_performance_tool, get_marks_tool, get_deadlines_tool
+
+def get_mcp_tools():
+
+    return [
+    calculator,
+    web_search,
+    current_time,
+    send_email,
+    get_subject_professors,
+    create_calendar_event,
+    update_event_by_title,
+    delete_event_by_title,
+    check_calendar_free,
+    list_calendar_events,
+    get_assignments_tool,
+    get_materials_tool,
+    student_performance_tool,
+    get_marks_tool,
+    get_deadlines_tool,
+]

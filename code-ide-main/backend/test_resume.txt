@@ -1,0 +1,18 @@
+John Doe
+Email: john.doe@example.com
+Phone: 555-123-4567
+
+Education
+BS Computer Science, University of Technology, 2020
+
+Experience
+Software Engineer at TechCorp (2021-Present)
+- Built microservices using Python and Docker
+- Managed AWS infrastructure
+
+Projects
+- Resume Parser Tool: A tool to parse resumes using LLM.
+
+Skills
+Languages: Python, TypeScript
+Tools: React, Node, Docker, AWS
