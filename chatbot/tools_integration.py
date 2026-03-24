@@ -1,8 +1,25 @@
 from langchain_core.tools import tool
 import json
 import requests
+import webbrowser
 from assignment_solver import solve_assignment
 from analysis_api import fetch_student_data
+
+# ---------------------------------------------------------------------------
+# Interview Routing – fetched ONCE at module load
+# ---------------------------------------------------------------------------
+INTERVIEW_ROUTING_API = "https://scholarsync-aps-backend.azurewebsites.net/api/interview_routing"
+FRONTEND_BASE          = "https://scholarsync-aps-client.azurewebsites.net"
+
+try:
+    _interview_response = requests.get(INTERVIEW_ROUTING_API, timeout=15)
+    _interview_response.raise_for_status()
+    _interview_data    = _interview_response.json()
+    _interview_mapping = {item["question_tag"]: item for item in _interview_data}
+except Exception as _e:
+    print(f"[Interview] Warning: could not pre-fetch routing data: {_e}")
+    _interview_data    = []
+    _interview_mapping = {}
 
 ASSIGNMENTS_API = "https://student-portal-3-tos6.onrender.com/api/student/69ad240e7352e15b1e37b844/assignments"
 MATERIALS_API  = "https://student-portal-3-tos6.onrender.com/materials"
@@ -221,41 +238,150 @@ def get_exams_tool() -> str:
     """
     print("[Tool] get_exams_tool called")
     try:
-        r = requests.get(EXAMS_API, timeout=15)
-        if r.status_code == 401 or r.status_code == 403:
-            return json.dumps({
-                "error": "Exam data requires authentication. Please log in to the student portal to view your exam schedule."
-            })
+        r = requests.get(EXAM_SCHEDULE_API, timeout=15)
         if r.status_code != 200:
-            return f"Failed to fetch exam schedule (status {r.status_code})."
+            return "Failed to fetch exam schedule from the portal."
+            
+        res = r.json()
+        if not res.get("success"):
+            return "Failed to fetch item data from students dashboard."
 
-        if "application/json" not in r.headers.get("Content-Type", ""):
-            return "Exam schedule data is not available as JSON or requires direct login. Please check the university portal."
-
-        data = r.json()
-
-        # Try standard shapes
-        exams = (
-            data.get("data", {}).get("exams", [])
-            or data.get("data", [])
-            or data.get("exams", [])
-            or (data if isinstance(data, list) else [])
-        )
-
-        if not exams:
+        schedules = res.get("data", {}).get("examSchedules", [])
+        if not schedules:
             return "No upcoming exams found in the student portal."
 
         result = []
-        for e in exams:
-            result.append({
-                "title": e.get("title") or e.get("name", "Untitled Exam"),
-                "subject": e.get("subject", {}).get("name", "") if isinstance(e.get("subject"), dict) else e.get("subject", ""),
-                "type": e.get("type") or e.get("examType", "exam"),
-                "date": e.get("date") or e.get("examDate", ""),
-                "time": e.get("time") or e.get("startTime", ""),
-                "venue": e.get("venue") or e.get("room", ""),
-                "duration": e.get("duration", ""),
-            })
+        for sched in schedules:
+            subject = sched.get("subject", {})
+            subject_name = subject.get("name", "Unknown Subject")
+            exams = sched.get("exams", {})
+
+            for exam_name, details in exams.items():
+                if not details or not details.get("startTime"):
+                    continue
+
+                result.append({
+                    "title": f"{subject_name} - {exam_name}",
+                    "subject": subject_name,
+                    "type": exam_name,
+                    "time": details.get("startTime", ""),
+                    "venue": details.get("location", "TBA"),
+                    "duration": details.get("duration", "")
+                })
+        
+        if not result:
+            return "No valid exam dates found in the schedule."
+            
         return json.dumps(result, indent=2)
     except Exception as e:
         return f"Error fetching exam schedule: {str(e)}"
+
+
+# ---------------------------------------------------------------------------
+# Interview Tools
+# ---------------------------------------------------------------------------
+
+@tool
+def get_interview_info_tool() -> str:
+    """
+    Returns the student's coding interview practice performance for ALL topics
+    from the ScholarSync interview routing system.
+    Topics include: binary_search, graph, greedy, math, two_pointer (and more).
+    Each entry includes: question_tag, number_of_attempts, performance_score (0-100),
+    and a description_of_performance summarising past attempts.
+
+    USE THIS TOOL (not marks tools) when the user asks ANY of:
+    - "how am I doing on binary search / graph / greedy / math / two pointer"
+    - "what is my score / performance on [coding topic]"
+    - "show my interview practice results"
+    - "how many attempts have I done on [topic]"
+    - any question about coding interview practice progress or scores
+    NEVER use the marks or attendance tools for these questions.
+    """
+    print("[Tool] get_interview_info_tool called")
+    if not _interview_data:
+        return "Interview routing data is currently unavailable."
+    result = []
+    for item in _interview_data:
+        result.append({
+            "topic":                  item.get("question_tag", "unknown"),
+            "attempts":               item.get("number_of_attempts", 0),
+            "performance_score":      item.get("performance_score", 0),
+            "performance_summary":    item.get("description_of_performance", ""),
+            "frontend_url":           FRONTEND_BASE.rstrip("/") + "/" + item.get("endpoint_redirect", "").lstrip("/")
+        })
+    return json.dumps(result, indent=2)
+
+
+@tool
+def prepare_interview_session_tool(topic: str) -> str:
+    """
+    Looks up the ScholarSync interview practice page for the given coding topic
+    and returns the URL + the student's current performance stats.
+    Does NOT open the browser - it is used to CONFIRM with the user first.
+
+    'topic' must be one of: 'graph', 'binary_search', 'greedy', 'math', 'two_pointer'.
+    Spaces and mixed case are fine (e.g. 'binary search', 'Binary Search').
+
+    USE THIS TOOL (not calendar or task tools) when the user says any of:
+    - "schedule / start / book a [topic] interview"
+    - "I want to do a graph / greedy / math / two pointer / binary search interview"
+    - "practice [topic]" (e.g. "practice binary search", "practice graphs")
+    
+    CRITICAL INSTRUCTION: You MUST output the exact `ui_interview_confirm` JSON block shown in your system prompt using the returned data. DO NOT describe the interview details in text.
+    """
+    print(f"[Tool] prepare_interview_session_tool called with topic={topic!r}")
+    tag = topic.strip().lower().replace(" ", "_")
+    if tag not in _interview_mapping:
+        available = ", ".join(sorted(_interview_mapping.keys()))
+        return (
+            f"Topic '{topic}' not found. Available topics: {available}."
+        )
+    endpoint = _interview_mapping[tag].get("endpoint_redirect", "")
+    if not endpoint:
+        return f"No interview page configured for '{topic}'."
+    url = FRONTEND_BASE.rstrip("/") + "/" + endpoint.lstrip("/")
+    perf  = _interview_mapping[tag].get("performance_score", 0)
+    tries = _interview_mapping[tag].get("number_of_attempts", 0)
+    summary = _interview_mapping[tag].get("description_of_performance", "")
+    return json.dumps({
+        "topic": tag,
+        "url": url,
+        "performance_score": perf,
+        "attempts": tries,
+        "performance_summary": summary
+    }, indent=2)
+
+
+@tool
+def open_interview_in_browser_tool(topic: str) -> str:
+    """
+    Opens the ScholarSync coding interview page for the given topic in the user's
+    browser. ONLY call this tool AFTER the user has explicitly confirmed they want
+    to be redirected (e.g. they replied 'yes', 'open it', 'go ahead', 'redirect me').
+
+    'topic' must be one of: 'graph', 'binary_search', 'greedy', 'math', 'two_pointer'.
+    Returns a confirmation message with the URL that was opened.
+    """
+    print(f"[Tool] open_interview_in_browser_tool called with topic={topic!r}")
+    tag = topic.strip().lower().replace(" ", "_")
+    if tag not in _interview_mapping:
+        available = ", ".join(sorted(_interview_mapping.keys()))
+        return f"Topic '{topic}' not found. Available: {available}."
+    endpoint = _interview_mapping[tag].get("endpoint_redirect", "")
+    if not endpoint:
+        return f"No interview page configured for '{topic}'."
+    url = FRONTEND_BASE.rstrip("/") + "/" + endpoint.lstrip("/")
+    try:
+        webbrowser.open(url)
+        opened = True
+    except Exception:
+        opened = False
+    perf  = _interview_mapping[tag].get("performance_score", 0)
+    tries = _interview_mapping[tag].get("number_of_attempts", 0)
+    status = "opened in your browser" if opened else "ready (could not auto-open browser)"
+    return (
+        f"✅ Interview session for **{tag}** {status}.\n"
+        f"URL: {url}\n"
+        f"Current performance: {perf}/100 over {tries} attempt(s)."
+    )

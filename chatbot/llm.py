@@ -13,7 +13,7 @@ llm = AzureChatOpenAI(
     azure_deployment=os.getenv("DEPLOYMENT_NAME", "gpt-4o-mini"),
     temperature=0,
     streaming=True,
-    max_tokens=1024,
+    max_tokens=4096,
     api_version="2024-02-15-preview"
 )
 
@@ -22,7 +22,7 @@ tool_llm = AzureChatOpenAI(
     azure_deployment=os.getenv("DEPLOYMENT_NAME", "gpt-4o-mini"),
     temperature=0,
     streaming=True,
-    max_tokens=2048,
+    max_tokens=4096,
     api_version="2024-02-15-preview"
 )
 
@@ -332,7 +332,7 @@ Format:
 YYYY-MM-DDTHH:MM:SS
 
 Example:
-Tomorrow 4 PM → 2026-03-08T16:00:00
+Tomorrow 4 PM → 2025-03-08T16:00:00
 
 3. Default duration = 30 minutes unless specified.
 4. Timezone is always Asia/Kolkata.

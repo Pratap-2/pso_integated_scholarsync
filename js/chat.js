@@ -177,6 +177,89 @@ export async function sendMessage(){
             }
         }
 
+        // ── ui_interview_confirm block ─────────────────────────────────────
+        const ivRegex = /```ui_interview_confirm\s+([\s\S]*?)```/;
+        const matchIv = finalTxt.match(ivRegex);
+
+        if (matchIv) {
+            let jsonStr = matchIv[1].trim();
+            try {
+                let iv = JSON.parse(jsonStr);
+                let topic    = (iv.topic || "interview").replace(/_/g, " ");
+                let topicCap = topic.charAt(0).toUpperCase() + topic.slice(1);
+                let url      = iv.url  || "#";
+                let score    = iv.score    !== undefined ? iv.score    : "?";
+                let attempts = iv.attempts !== undefined ? iv.attempts : "?";
+
+                // Score colour
+                let scoreColor = score >= 70 ? "#4ade80" : score >= 40 ? "#facc15" : "#f87171";
+
+                let cleanTxt = finalTxt.replace(ivRegex, "").trim();
+
+                let cardHtml = `
+                <div class="iv-confirm-card" style="
+                    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(168,85,247,0.10));
+                    border: 1px solid rgba(139,92,246,0.4);
+                    border-radius: 14px;
+                    padding: 18px 20px;
+                    margin-top: 10px;
+                    font-family: inherit;
+                ">
+                  <div style="display:flex; align-items:center; gap: 10px; margin-bottom: 12px;">
+                    <span style="font-size:22px;">🎯</span>
+                    <div>
+                      <div style="font-size:15px; font-weight:700; color:#e2d9ff;">${topicCap} Interview</div>
+                      <div style="font-size:12px; color:#a78bfa; margin-top:2px;">Ready to start your practice session</div>
+                    </div>
+                  </div>
+                  <div style="display:flex; gap:16px; margin-bottom:16px;">
+                    <div style="background:rgba(255,255,255,0.05); border-radius:8px; padding:8px 14px; flex:1; text-align:center;">
+                      <div style="font-size:11px; color:#94a3b8; margin-bottom:2px;">SCORE</div>
+                      <div style="font-size:18px; font-weight:700; color:${scoreColor};">${score}<span style="font-size:11px; color:#94a3b8;">/100</span></div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.05); border-radius:8px; padding:8px 14px; flex:1; text-align:center;">
+                      <div style="font-size:11px; color:#94a3b8; margin-bottom:2px;">ATTEMPTS</div>
+                      <div style="font-size:18px; font-weight:700; color:#c4b5fd;">${attempts}</div>
+                    </div>
+                  </div>
+                  <p style="font-size:13.5px; color:#d0e8ff; margin-bottom:12px;">
+                    Do you want to start the <strong>${topicCap}</strong> interview now?
+                  </p>
+                  <div style="display:flex; gap:10px;">
+                    <button
+                      onclick="window.open('${url}', '_blank'); this.parentElement.parentElement.style.opacity='0.6'; this.disabled=true;"
+                      style="
+                        flex:1; padding:9px 0; background:linear-gradient(90deg,#7c3aed,#4f46e5);
+                        border:none; border-radius:8px; color:#fff; font-size:14px; font-weight:600;
+                        cursor:pointer; transition:opacity 0.2s;
+                      "
+                      onmouseover="this.style.opacity='0.88'" onmouseout="this.style.opacity='1'">
+                      Yes, Start Interview ↗
+                    </button>
+                    <button
+                      onclick="this.parentElement.parentElement.style.opacity='0.4'; this.disabled=true; this.previousElementSibling.disabled=true;"
+                      style="
+                        padding:9px 18px; background:transparent;
+                        border:1px solid rgba(255,255,255,0.2); color:#94a3b8;
+                        border-radius:8px; cursor:pointer; font-size:13px; transition:all 0.2s;
+                      "
+                      onmouseover="this.style.background='rgba(255,255,255,0.06)'" onmouseout="this.style.background='transparent'">
+                      No, thanks
+                    </button>
+                  </div>
+                </div>`;
+
+                botDiv.innerHTML =
+                    (cleanTxt ? `<div style='line-height:1.6; font-size:14px; margin-bottom:8px;'>${cleanTxt.replace(/\n/g,'<br>')}</div>` : '')
+                    + cardHtml;
+
+                const chatBox = document.getElementById("chat-box");
+                if (chatBox) chatBox.scrollTop = chatBox.scrollHeight;
+            } catch(e) {
+                console.error("Failed to parse ui_interview_confirm JSON", e);
+            }
+        }
+
     }
     catch(error){
 

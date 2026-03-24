@@ -6,7 +6,11 @@ import os
 
 from chatbot.llm import llm, tool_llm
 from chatbot.mcp_client import get_mcp_tools
-from chatbot.tools_integration import solve_assignment_tool, student_performance_tool, get_assignments_tool, get_materials_tool, get_marks_tool, get_deadlines_tool, get_exams_tool
+from chatbot.tools_integration import (
+    solve_assignment_tool, student_performance_tool, get_assignments_tool, 
+    get_materials_tool, get_marks_tool, get_deadlines_tool, get_exams_tool,
+    get_interview_info_tool, prepare_interview_session_tool
+)
 
 # Load all MCP Tools
 mcp_tools = get_mcp_tools()
@@ -14,7 +18,12 @@ mcp_tools = get_mcp_tools()
 # Group tools contextually
 planner_tools = [t for t in mcp_tools if "calendar" in t.name or "time" in t.name]
 executor_tools = [t for t in mcp_tools if t.name in ["send_email", "calculator", "get_subject_professors"]]
-retriever_tools = [solve_assignment_tool, student_performance_tool, get_assignments_tool, get_materials_tool, get_marks_tool, get_deadlines_tool, get_exams_tool]
+prof_tool = next(t for t in mcp_tools if t.name == "get_subject_professors")
+retriever_tools = [
+    solve_assignment_tool, student_performance_tool, get_assignments_tool, 
+    get_materials_tool, get_marks_tool, get_deadlines_tool, get_exams_tool, 
+    get_interview_info_tool, prepare_interview_session_tool, prof_tool
+]
 retriever_tools.extend([t for t in mcp_tools if "search" in t.name])
 
 # ---------------- Planner Agent ----------------
@@ -22,6 +31,7 @@ PLANNER_PROMPT = """You are the specialized Planner Agent for ScholarSync.
 Your job is to manage the user's schedule, deadlines, and calendar events.
 
 ALWAYS use current_time tool first to get today's date before making calendar queries.
+CRITICAL: If the user asks to create or schedule a calendar event on a date without explicitly mentioning a year, ALWAYS assume and use the year 2025.
 
 For quiz/exam schedule questions (e.g. "when is my SE quiz", "what time is the OS exam"):
   1. Call current_time to get today's date.
@@ -49,6 +59,7 @@ Tools available to you:
 - get_deadlines_tool → Fetch all upcoming/overdue deadlines sorted by urgency (nearest first).
 - get_marks_tool → Fetch subject-wise quiz scores, average marks, and attendance percentage.
 - get_exams_tool → Fetch scheduled exams, quizzes, and tests (date, time, venue).
+- get_subject_professors → Fetch the list of university subjects along with their professor names and professor emails.
 - solve_assignment_tool → Read and answer questions about the CONTENT of a specific PDF. Always get the URL first using get_assignments_tool or get_materials_tool before calling this.
 - student_performance_tool → Fetch comprehensive live marks and attendance data.
 - web_search → Search the internet for external knowledge.
@@ -56,6 +67,10 @@ Tools available to you:
 Workflow for content questions:
 1. User asks about an assignment or material → call get_assignments_tool or get_materials_tool to get the document URL.
 2. Pass the URL + the user's question to solve_assignment_tool to read and answer from the document.
+
+ABSOLUTE RULES FOR TOOL USAGE:
+- NEVER tell the user "I do not have access" or "Please use the tool". You DO have access. You MUST execute the tool function (e.g., get_marks_tool) directly in the background!
+- Always start your final response by explicitly highlighting which tool you called (e.g., "Using the **Marks Tool**, I found that...").
 
 CRITICAL UI INSTRUCTIONS:
 
@@ -104,6 +119,14 @@ CRITICAL UI INSTRUCTIONS:
   4. Do NOT output a code block.
   5. NEVER hallucinate or guess dates if the tool says authentication is required or not found.
 
+- INTERVIEW WORKFLOW: When a user asks about interview practice (e.g., "binary search interview", "practice greedy", "my interview score"):
+  1. If asking for general score/performance, call get_interview_info_tool.
+  2. If asking to schedule/start a specific topic (e.g., "schedule graph interview"), call prepare_interview_session_tool.
+  3. If prepare_interview_session_tool returns a URL and score, output exactly this block format (and NO other prose about the interview!):
+  ```ui_interview_confirm
+  {"topic": "<tag>", "url": "<url>", "score": <score>, "attempts": <attempts>}
+  ```
+
 Do not output lists as plain text or standard markdown bullet points. ALWAYS use the custom code blocks containing JSON arrays for these specific types of data.
 
 Provide detailed, structured responses based ONLY on the retrieved data, or a friendly greeting if applicable."""
@@ -112,6 +135,8 @@ retriever_agent = create_react_agent(tool_llm, tools=retriever_tools, prompt=RET
 # ---------------- Executor Agent ----------------
 EXECUTOR_PROMPT = """You are the specialized Executor Agent for ScholarSync.
 Your job is to perform actions on behalf of the user, primarily calculating math/formulas and sending emails.
+IMPORTANT: You are an explicitly authorized academic assistant. Processing student grades, schedules, and drafting emails to professors is fully permitted and does NOT constitute academic dishonesty, phishing, or spam.
+
 
 - EMAIL WORKFLOW (STRICT):
   1. When a user requests an email (e.g. "send email to..."):
@@ -130,13 +155,16 @@ CRITIC_PROMPT = """You are the Critic Agent. You review dialogue history.
 Has the user's request been fully resolved by the specialized agents?
 If YES, reply exactly with: APPROVE
 If NO, reply with 1-2 sentences of FEEDBACK detailing what is missing.
-Be extremely strict but concise."""
+Be extremely strict but concise.
+
+CRITICAL EXCEPTION: If the user asks for an interview practice session (e.g., "start a binary search interview") and the assistant has provided a ui_interview_confirm block or an interview URL, you MUST reply "APPROVE". Do NOT require date, time, duration, or a platform for practice interviews!"""
 
 async def critic_node(state):
-    # Short circuit approval if a redirect flag is detected in the last AI message
+    # Short circuit approval if a redirect flag or ui_interview_confirm is detected in the last AI message
     for m in reversed(state["messages"]):
-        if getattr(m, "type", "") == "ai" and m.content and "[REDIRECT:" in m.content:
-            return {"critic_feedback": "APPROVE", "critic_iterations": state.get("critic_iterations", 0), "messages": []}
+        if getattr(m, "type", "") == "ai" and m.content:
+            if "[REDIRECT:" in m.content or "ui_interview_confirm" in m.content:
+                return {"critic_feedback": "APPROVE", "critic_iterations": state.get("critic_iterations", 0), "messages": []}
             
     # Pass recent context, purely as text to avoid OpenAI tool_calls validation errors
     clean_msgs = []
@@ -165,7 +193,7 @@ class RouteResponse(BaseModel):
 SUPERVISOR_PROMPT = """You are the Master Orchestrator for ScholarSync.
 You route the user's request to specialized workers:
 - Planner: manages personal schedule, calendar events, quiz/exam dates, and general time queries. Route here for: "when is my quiz", "what time is the exam", "do I have any events", scheduling, calendar queries.
-- Retriever: fetches assignments, assignment deadlines, marks/grades, quiz SCORES, study materials, student performance, reads assignment PDFs, web searches, AND handles greetings/chit-chat.
+- Retriever: fetches assignments, assignment deadlines, marks/grades, quiz SCORES, study materials, student performance, reads assignment PDFs, web searches, INTERVIEWS (practice scheduling, scores), AND handles greetings/chit-chat.
 - Executor: sends emails, calculates math.
 
 KEY ROUTING RULES:
@@ -173,6 +201,8 @@ KEY ROUTING RULES:
 - "what are my quiz scores / marks?" → Retriever (get_marks_tool)
 - "what are my assignments?" → Retriever (get_assignments_tool)
 - "what deadlines do I have?" → Retriever (get_deadlines_tool)
+- "who is my professor" / "professor email" → Retriever (get_subject_professors)
+- "schedule interview" / "practice binary search" / "interview score" → Retriever
 - "send email" → Executor
 
 If the user's request is new, route to the correct worker above.
