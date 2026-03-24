@@ -21,3 +21,5 @@ generated_pdfs/
 # Secrets
 credentials.json
 token.pickle
+
+service-account.json
