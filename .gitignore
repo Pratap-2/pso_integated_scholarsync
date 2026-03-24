@@ -23,3 +23,5 @@ credentials.json
 token.pickle
 
 service-account.json
+chatbot/service-account.json
+chatbot/mcp_server/service-account.json
