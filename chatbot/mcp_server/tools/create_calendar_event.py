@@ -1,9 +1,8 @@
 from datetime import datetime
 import pytz
-from ..calendar_auth import get_calendar_service
+from ..calendar_auth import get_calendar_service, CALENDAR_ID
 
 IST = pytz.timezone("Asia/Kolkata")
-
 
 def create_calendar_event(data):
 
@@ -39,7 +38,7 @@ def create_calendar_event(data):
         }
 
         event = service.events().insert(
-            calendarId="primary",
+            calendarId=CALENDAR_ID,
             body=event
         ).execute()
 

@@ -1,6 +1,6 @@
 from datetime import datetime
 import pytz
-from ..calendar_auth import get_calendar_service
+from ..calendar_auth import get_calendar_service, CALENDAR_ID
 
 IST = pytz.timezone("Asia/Kolkata")
 
@@ -19,7 +19,7 @@ def update_event_by_title(data):
 
         # fetch more events and include future events
         events_result = service.events().list(
-            calendarId="primary",
+            calendarId=CALENDAR_ID,
             maxResults=250,
             singleEvents=True,
             orderBy="startTime"
@@ -59,7 +59,7 @@ def update_event_by_title(data):
                 }
 
                 service.events().update(
-                    calendarId="primary",
+                    calendarId=CALENDAR_ID,
                     eventId=event_id,
                     body=updated_event
                 ).execute()

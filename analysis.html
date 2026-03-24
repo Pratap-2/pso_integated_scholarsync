@@ -126,7 +126,40 @@ td{padding:13px 18px;font-size:13px;color:var(--t2);}
 .ai-badge{display:flex;align-items:center;gap:7px;background:rgba(16,96,240,.1);border:1px solid rgba(61,127,255,.28);padding:5px 14px;border-radius:100px;font-family:var(--font-m);font-size:9px;color:var(--azure-l);letter-spacing:.1em;text-transform:uppercase;}
 .ai-badge-dot{width:6px;height:6px;border-radius:50%;background:var(--electric);box-shadow:0 0 7px var(--electric);animation:pulse 2s ease-in-out infinite;}
 #reportTime{font-family:var(--font-m);font-size:9px;color:var(--t4);letter-spacing:.1em;}
-#report{font-size:13.5px;color:var(--t2);line-height:1.9;white-space:pre-wrap;}
+#report{margin-top:20px;}
+.ai-section { margin-top: 36px; }
+.ai-section:first-child { margin-top: 0; }
+.ai-h3 { font-family: var(--font-d); font-size: 16px; font-weight: 700; color: var(--t1); margin-bottom: 2px; display: flex; align-items: center; gap: 8px; }
+.ai-h3 svg { width: 18px; height: 18px; color: var(--azure-m); }
+.ai-p { font-size: 13.5px; color: var(--t2); line-height: 1.8; margin-bottom: 16px; font-family: var(--font-b);}
+.ai-p strong { color: var(--t1); font-weight: 600; }
+.ai-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-top: 16px; margin-bottom: 24px;}
+.ai-card { background: linear-gradient(148deg, var(--navy3), var(--navy2)); border: 1px solid var(--border); border-radius: 14px; padding: 18px; transition: transform .2s, border-color .2s, box-shadow .2s; }
+.ai-card:hover { transform: translateY(-3px); border-color: rgba(0,207,255,.3); box-shadow: 0 8px 24px rgba(0,207,255,.08); }
+.ai-card-num { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 6px; background: rgba(16,96,240,.15); color: var(--azure-l); font-family: var(--font-m); font-size: 11px; font-weight: 700; margin-bottom: 12px; }
+.ai-card-title { font-family: var(--font-d); font-size: 14px; font-weight: 600; color: var(--t1); margin-bottom: 8px; }
+.ai-card-body { font-size: 12.5px; color: var(--t2); line-height: 1.6; }
+.ai-timeline { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; position: relative; padding-left: 20px; margin-bottom: 24px;}
+.ai-timeline::before { content: ''; position: absolute; left: 4px; top: 12px; bottom: 8px; width: 2px; background: linear-gradient(to bottom, var(--azure-m), var(--electric)); opacity: 0.3; border-radius: 2px;}
+.ai-tl-item { position: relative; }
+.ai-tl-dot { position: absolute; left: -21px; top: 7px; width: 10px; height: 10px; border-radius: 50%; background: var(--navy2); border: 2px solid var(--electric); z-index: 2; box-shadow: 0 0 8px rgba(0,207,255,.4); }
+.ai-tl-day { font-family: var(--font-m); font-size: 11px; color: var(--electric); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; font-weight: 700;}
+.ai-tl-content { font-size: 13px; color: var(--t2); line-height: 1.6; background: rgba(0,207,255,.03); padding: 14px 16px; border-radius: 8px; border: 1px solid rgba(0,207,255,.1); }
+
+.ai-week { display: flex; gap: 16px; min-width: 0; overflow-x: auto; padding: 10px 0 24px; margin: 0; scroll-snap-type: x mandatory;}
+.ai-week::-webkit-scrollbar { height: 6px; }
+.ai-week::-webkit-scrollbar-thumb { background: rgba(16,96,240,.3); border-radius: 6px; }
+.ai-day-card { scroll-snap-align: start; min-width: 250px; background: linear-gradient(148deg, var(--navy3), var(--navy2)); border: 1px solid var(--border); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; transition: transform .2s, border-color .2s, box-shadow .2s; }
+.ai-day-card:hover { transform: translateY(-3px); border-color: rgba(0,207,255,.3); box-shadow: 0 8px 24px rgba(0,207,255,.08); }
+.ai-day-header { font-family: var(--font-d); font-size: 15px; font-weight: 700; color: var(--t1); display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); padding-bottom: 12px; }
+.ai-day-badge { font-family: var(--font-m); font-size: 10px; background: rgba(0,207,255,.12); color: var(--electric); padding: 4px 8px; border-radius: 6px; font-weight: 700; letter-spacing: .05em;}
+.ai-day-task { background: rgba(2,8,16,.6); border: 1px solid rgba(16,96,240,.1); border-radius: 8px; padding: 14px; position: relative; overflow: hidden; }
+.ai-day-task::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--electric); border-radius: 3px 0 0 3px; opacity: 0.8; }
+.ai-task-time { font-family: var(--font-m); font-size: 10px; color: var(--azure-l); margin-bottom: 8px; font-weight: 700; display:flex; align-items:center; gap:8px;}
+.ai-task-bar-bg { flex: 1; height: 4px; background: rgba(16,96,240,.15); border-radius: 4px; overflow:hidden;}
+.ai-task-bar-fill { height: 100%; background: linear-gradient(90deg, var(--azure-m), var(--electric)); border-radius: 4px; }
+.ai-task-desc { font-size: 12px; color: var(--t1); line-height: 1.6; }
+.ai-task-desc strong { color: var(--electric); }
 
 footer{text-align:center;padding:28px 0 0;margin-top:40px;font-family:var(--font-m);font-size:9px;color:var(--t4);letter-spacing:.14em;text-transform:uppercase;border-top:1px solid var(--border);}
 </style>
@@ -305,7 +338,142 @@ function render(json){
     </tr>`;
   });
 
-  document.getElementById('report').textContent=stripMarkdown(analysis);
+  document.getElementById('report').innerHTML = formatRichAnalysis(analysis);
+}
+
+function formatRichAnalysis(text) {
+  if (!text) return '<div class="ai-p">No analysis generated.</div>';
+  
+  // Normalize headers so they are independently line-broken
+  text = text.replace(/^(?:###\s*|##\s*|#\s*)?(Strengths|Weak Subjects|Attendance Risks|Study Strategy|Weekly Study Planner|Conclusion)(.*?)$/gim, '\n\n||HEAD||$1$2\n\n');
+  
+  let html = '';
+  const lines = text.split('\n');
+  
+  let inGrid = false; let inWeek = false;
+  
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i].trim();
+    if (!line) continue;
+    
+    // Inline bold formatting
+    line = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    
+    // 1. Identify Headers
+    if (line.startsWith('||HEAD||')) {
+      if (inGrid) { html += '</div>'; inGrid = false; }
+      if (inWeek) { html += '</div>'; inWeek = false; }
+      
+      let title = line.replace('||HEAD||', '').trim();
+      let icon = '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>';
+      if (title.toLowerCase().includes('weak') || title.toLowerCase().includes('risk')) {
+        icon = '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>';
+      } else if (title.toLowerCase().includes('plan')) {
+         icon = '<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>';
+      }
+      html += `<div class="ai-section"><h3 class="ai-h3">${icon} ${title}</h3></div>`;
+      continue;
+    }
+
+    // 2. Identify Numbered Lists -> Grid Cards
+    let numListMatch = line.match(/^(\d+)\.\s+([\s\S]*)/);
+    if (numListMatch) {
+      if (!inGrid) { html += '<div class="ai-grid">'; inGrid = true; }
+      if (inWeek) { html += '</div>'; inWeek = false; }
+      
+      let num = numListMatch[1];
+      let content = numListMatch[2].replace(/<strong>(.*?)<\/strong>/g, '$1'); 
+      let splitIdx = content.indexOf(':');
+      if (splitIdx === -1) splitIdx = content.indexOf('.');
+      if (splitIdx === -1 || splitIdx > 50) splitIdx = content.indexOf(' -');
+      
+      let titleHtml = content; let bodyHtml = '';
+      if (splitIdx !== -1 && splitIdx < 70) {
+        titleHtml = content.substring(0, splitIdx).trim();
+        bodyHtml = content.substring(splitIdx + 1).trim();
+      }
+      
+      html += `<div class="ai-card">
+                 <div class="ai-card-num">${num}</div>
+                 <div class="ai-card-title">${titleHtml}</div>
+                 <div class="ai-card-body">${bodyHtml}</div>
+               </div>`;
+      continue;
+    }
+
+    // 3. Identify Weekdays -> Graphical Auto-Scaling Dashboard
+    const isDay = line.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)(?:[:\-]|\s*$)(\s*.*)/i);
+    if (isDay || (inWeek && line.match(/^[-\*]\s+/))) {
+      if (!inWeek) { html += '<div class="ai-week">'; inWeek = true; }
+      if (inGrid) { html += '</div>'; inGrid = false; }
+      
+      if (isDay) {
+         let day = isDay[1];
+         let extra = isDay[2].trim();
+         let tasksHtml = '';
+         let totalHours = 0;
+         if (extra) tasksHtml += `<div class="ai-task-desc" style="margin-bottom:8px">${extra}</div>`;
+         
+         let j = i + 1;
+         while (j < lines.length) {
+            let nextLine = lines[j].trim();
+            if (!nextLine) { j++; continue; }
+            if (nextLine.match(/^(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)(?:[:\-]|\s*$)/i) || nextLine.startsWith('||HEAD||')) break; 
+            
+            if (nextLine.match(/^[-\*]\s+/)) {
+               let taskText = nextLine.replace(/^[-\*]\s*/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+               let hrsMatch = taskText.match(/^(\d+(?:\.\d+)?)\s*hours?:?\s*(.*)/i);
+               if (!hrsMatch) hrsMatch = taskText.match(/^(.*?)\s*\((\d+(?:\.\d+)?)\s*hours?\)/i);
+               
+               let hrs = 0; let desc = taskText;
+               if (hrsMatch && hrsMatch[1] && !isNaN(parseFloat(hrsMatch[1]))) {
+                 hrs = parseFloat(hrsMatch[1]); desc = hrsMatch[2];
+               } else if (hrsMatch && hrsMatch[2]) {
+                 hrs = parseFloat(hrsMatch[2]); desc = hrsMatch[1];
+               }
+
+               if (hrs > 0) {
+                 totalHours += hrs;
+                 let w = Math.min(100, (hrs / 3.0) * 100); // 3 hours per task sets 100% boundary
+                 tasksHtml += `
+                   <div class="ai-day-task">
+                     <div class="ai-task-time">
+                       ${hrs} HRS <div class="ai-task-bar-bg"><div class="ai-task-bar-fill" style="width:${w}%"></div></div>
+                     </div>
+                     <div class="ai-task-desc">${desc}</div>
+                   </div>`;
+               } else {
+                 tasksHtml += `<div class="ai-day-task"><div class="ai-task-desc"><span style="color:var(--electric);margin-right:6px">✦</span> ${desc}</div></div>`;
+               }
+            } else {
+               tasksHtml += `<div class="ai-task-desc">${nextLine.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')}</div>`;
+            }
+            j++;
+         }
+         
+         html += `
+           <div class="ai-day-card">
+             <div class="ai-day-header">
+               ${day}
+               ${totalHours > 0 ? `<div class="ai-day-badge">${totalHours} HRS</div>` : ''}
+             </div>
+             ${tasksHtml}
+           </div>`;
+         i = j - 1; // skip parsed tasks
+      }
+      continue;
+    }
+
+    // 4. Default Drop
+    if (inGrid) { html += '</div>'; inGrid = false; }
+    if (inWeek) { html += '</div>'; inWeek = false; }
+    html += `<div class="ai-p">${line}</div>`;
+  }
+  
+  if (inGrid) html += '</div>';
+  if (inWeek) html += '</div>';
+
+  return html;
 }
 
 async function load(){

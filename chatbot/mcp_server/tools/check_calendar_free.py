@@ -1,6 +1,6 @@
 from datetime import datetime
 import pytz
-from ..calendar_auth import get_calendar_service
+from ..calendar_auth import get_calendar_service, CALENDAR_ID
 
 IST = pytz.timezone("Asia/Kolkata")
 

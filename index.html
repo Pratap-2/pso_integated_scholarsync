@@ -230,7 +230,7 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
     const loading  = document.getElementById('loading');
     const errorMsg = document.getElementById('error-msg');
     try{
-      const res = await fetch('chatbot/sync/sync_db.json');
+      const res = await fetch('/sync-db');
       if(!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 

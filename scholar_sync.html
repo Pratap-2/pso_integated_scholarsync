@@ -707,7 +707,7 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
 .chat-hdr-title { font-family: var(--font-d); font-size: 15px; font-weight: 700; letter-spacing: -.02em; color: #edf4ff; }
 .chat-hdr-sub { font-family: var(--font-m); font-size: 9px; color: var(--t2); letter-spacing: .1em; text-transform: uppercase; margin-top: 2px; }
 .show-agents-btn {
-  display: none; align-items: center; gap: 7px;
+  display: flex; align-items: center; gap: 7px;
   font-family: var(--font-m); font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
   color: var(--azure-l); background: rgba(16,96,240,.08); border: 1px solid rgba(61,127,255,.3);
   padding: 6px 14px; border-radius: 8px; cursor: pointer; transition: all .2s;
@@ -736,10 +736,31 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
 .cw-r2::before { background: var(--electric); box-shadow: 0 0 9px var(--electric); width: 4px; height: 4px; }
 .cw-title { font-family: var(--font-d); font-size: 20px; font-weight: 800; background: linear-gradient(135deg, #fff 0%, var(--azure-l) 55%, var(--electric) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 7px; }
 .cw-sub { font-size: 13px; font-weight: 300; color: var(--t2); max-width: 340px; line-height: 1.8; margin-bottom: 22px; }
-.prompt-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-width: 420px; width: 100%; }
-.p-chip { background: var(--navy3); border: 1px solid var(--border2); color: var(--t2); font-size: 11.5px; padding: 10px 13px; border-radius: 9px; cursor: pointer; transition: all .2s; text-align: left; line-height: 1.45; }
-.p-chip span { display: block; font-family: var(--font-m); font-size: 7.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--azure-l); margin-bottom: 2px; opacity: .75; }
-.p-chip:hover { border-color: rgba(16,96,240,.42); color: var(--t1); background: var(--navy4); transform: translateY(-1px); }
+.suggested-actions-container {
+  margin: 12px 26px 8px;
+}
+.prompt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px; width: 100%;
+}
+.p-chip {
+  background: rgba(35, 50, 75, 0.3);
+  border: 1px solid rgba(130, 180, 255, 0.08);
+  border-radius: 8px;
+  padding: 9px 13px;
+  color: #c0d4f0;
+  font-size: 11px;
+  font-family: var(--font-m); font-weight: 400;
+  cursor: pointer; transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  text-align: left; line-height: 1.3;
+}
+.p-chip:hover {
+  background: linear-gradient(180deg, rgba(40, 65, 110, 0.6) 0%, rgba(20, 40, 70, 0.9) 100%);
+  border-color: rgba(61, 127, 255, 0.4);
+  color: #fff; transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 96, 240, 0.2);
+}
 
 /* ════════════════════════════════════════
    CHAT MESSAGES
@@ -836,7 +857,7 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
 .ai   .msg-sender { color: var(--azure-l); opacity: .8; }
 .user .msg-sender { color: var(--electric); opacity: .8; }
 .msg-time { font-family: var(--font-m); font-size: 8px; color: var(--t4); letter-spacing: .04em; }
-.msg-bubble { padding: 11px 15px; border-radius: 13px; font-size: 13.5px; color: var(--t1); line-height: 1.78; position: relative; overflow: hidden; white-space: pre-wrap; word-break: break-word; }
+.msg-bubble { padding: 11px 15px; border-radius: 13px; font-size: 15.5px; color: var(--t1); line-height: 1.78; position: relative; overflow: hidden; white-space: pre-wrap; word-break: break-word; }
 .ai   .msg-bubble { background: var(--navy3); border: 1px solid var(--border2); border-bottom-left-radius: 3px; }
 .user .msg-bubble { background: linear-gradient(135deg, rgba(16,96,240,.2), rgba(0,207,255,.07)); border: 1px solid rgba(16,96,240,.25); border-bottom-right-radius: 3px; }
 .ai   .msg-bubble::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, var(--azure-m), rgba(0,207,255,.5), transparent); opacity: .5; }
@@ -861,7 +882,7 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
 }
 .input-bar::before { content: ''; position: absolute; top: -1px; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, var(--azure-m) 35%, var(--electric) 65%, transparent); opacity: .2; }
 .input-wrap { flex: 1; position: relative; display: flex; align-items: center; }
-.input-bar input { width: 100%; background: var(--navy3); border: 1px solid var(--border2); color: var(--t1); font-family: var(--font-b); font-size: 13.5px; padding: 12px 50px 12px 18px; border-radius: 11px; outline: none; caret-color: var(--azure-m); transition: all .22s; }
+.input-bar input { width: 100%; background: var(--navy3); border: 1px solid var(--border2); color: var(--t1); font-family: var(--font-b); font-size: 14.5px; padding: 12px 50px 12px 18px; border-radius: 11px; outline: none; caret-color: var(--azure-m); transition: all .22s; }
 .input-bar input::placeholder { color: var(--t4); font-size: 13px; }
 .input-bar input:focus { border-color: rgba(16,96,240,.42); background: var(--navy4); box-shadow: 0 0 0 3px rgba(16,96,240,.07); }
 .input-hint { position: absolute; right: 14px; font-family: var(--font-m); font-size: 9px; color: var(--t4); pointer-events: none; }
@@ -1068,6 +1089,84 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
 
 .cnc-btn-asg { color: var(--electric); }
 .cnc-btn-asg:hover { color: #fff; }
+
+/* Desktop Sidebar Toggle */
+.sidebar {
+  transition: width 0.3s ease, min-width 0.3s ease;
+  overflow-x: hidden;
+}
+.sidebar.collapsed {
+  width: 60px;
+  min-width: 60px;
+}
+.sidebar.collapsed .sb-top-label,
+.sidebar.collapsed .sb-new .sb-new-icon,
+.sidebar.collapsed .sb-new .sb-new-text,
+.sidebar.collapsed .hist-list,
+.sidebar.collapsed .sb-foot,
+.sidebar.collapsed .sb-hist-hdr {
+  display: none !important;
+}
+.sidebar.collapsed .sb-new .sb-new-plus {
+  display: block !important;
+}
+.sidebar.collapsed .sb-top-header {
+  justify-content: center;
+}
+.sidebar.collapsed .hamburger-btn {
+  margin: 0 auto;
+}
+.sidebar.collapsed .sb-new {
+  padding: 8px 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Responsive Sidebar & App */
+@media (max-width: 900px) {
+  /* Hide the center text entirely on small screens */
+  .atb-center { display: none !important; }
+
+  /* Reduce topbar height and margins */
+  .app-topbar { padding: 10px 14px; }
+
+  /* Topbar buttons compactness */
+  .atb-home-btn, .show-agents-btn { padding: 5px 8px; font-size: 8.5px; gap: 4px; border-radius: 6px; }
+
+  /* Make prompt chips tighter on mobile */
+  .p-chip { padding: 6px 10px; font-size: 10px; }
+
+  .app-body {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    min-width: 100%;
+    max-height: 56px;
+    height: 100%;
+    overflow: hidden;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+    z-index: 150;
+    flex-shrink: 0;
+    position: relative;
+    background: rgba(6,16,34,0.98);
+  }
+  .sidebar.expanded {
+    max-height: 65vh;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    overflow-y: auto;
+  }
+  .hamburger-btn {
+    display: flex !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -1198,7 +1297,6 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
         <div class="an-status"><div class="an-dot"></div>Executing Operations</div>
       </div>
     </div>
-    <div class="agents-cta"><button class="btn-primary" onclick="enterApp()">Launch System →</button></div>
   </section>
 
   <div class="l-divider"></div>
@@ -1237,17 +1335,18 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
         <div class="atb-name">ScholarSync</div>
         <div class="atb-sub">Agent Workspace · Azure AI</div>
       </div>
-      <button class="atb-home-btn" onclick="goHome()">← Home</button>
     </div>
     <div class="atb-center">
-      <span>MS Hackathon 2025</span><span class="atb-sep">·</span>
-      <span>3-Agent Cooperative System</span><span class="atb-sep">·</span>
-      <span>Command Center</span>
+      <span>AI UNLOCKED 2026</span><span class="atb-sep">·</span>
+      <span>3-Agent Cooperative System</span>
     </div>
-    <div class="atb-right">
-      <div class="atb-pill"><span class="atb-pill-dot"></span>Planner Active</div>
-      <div class="atb-pill"><span class="atb-pill-dot" style="background:var(--electric);box-shadow:0 0 6px var(--electric);animation-delay:.5s"></span>Knowledge Active</div>
-      <div class="atb-online"><span class="atb-online-dot"></span>Systems Online</div>
+    <div class="atb-right" style="gap: 12px;">
+      <button class="atb-home-btn" id="show-agents-btn" onclick="showAgents()" style="width:130px; justify-content:center;">
+        ⊞ Show Agents
+      </button>
+      <button class="atb-home-btn" onclick="goHome()" style="width:105px; justify-content:center;">
+        ← Home
+      </button>
     </div>
   </header>
 
@@ -1255,19 +1354,28 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
   <div class="app-body">
 
     <!-- Sidebar — history only -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="app-sidebar">
       <div class="sb-top">
-        <div class="sb-top-label" style="color:#6aa0ff;opacity:1;font-size:9px;letter-spacing:.18em;">Conversations</div>
+        <div class="sb-top-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; height: 28px;">
+          <div class="sb-top-label" style="color:#6aa0ff;opacity:1;font-size:9px;letter-spacing:.18em;margin-bottom:0;">Conversations</div>
+          <button class="hamburger-btn" onclick="toggleSidebar()" style="display: flex; background: none; border: none; cursor: pointer; padding: 4px; align-items: center; justify-content: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6aa0ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hamburger-icon">
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        </div>
         <button class="sb-new" onclick="newChat()">
-          <span style="font-size:15px">✦</span>
-          New Conversation
+          <span class="sb-new-icon" style="font-size:15px">✦</span>
+          <span class="sb-new-plus" style="display:none;font-size:22px;line-height:1;font-weight:400;">+</span>
+          <span class="sb-new-text">New Conversation</span>
         </button>
       </div>
 
       <div class="sb-hist">
         <div class="sb-hist-hdr">
           <span class="sb-hist-lbl" style="color:#9dc4ff;opacity:1;font-size:9px;letter-spacing:.15em;">Chat History</span>
-          <span class="sb-hist-ct" id="hist-count" style="color:#00cfff;background:rgba(0,207,255,.12);border:1px solid rgba(0,207,255,.3);padding:2px 9px;border-radius:100px;font-size:9px;">0</span>
         </div>
         <!-- history-list ID required by js/main.js -->
         <div class="hist-list" id="history-list">
@@ -1280,31 +1388,20 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
       </div>
 
       <div class="sb-foot">
-        <div class="sb-foot-txt" style="color:#426080;">MS Hackathon 2025 · Azure AI</div>
+        <div class="sb-foot-txt" style="color:#426080;">AI UNLOCKED 2026 · Azure AI</div>
       </div>
     </aside>
 
     <!-- Main panel -->
     <main class="main-panel">
 
-      <!-- Agent activity bar -->
-      <div class="activity-bar">
-        <span class="act-lbl">Agent Activity</span>
-        <div class="abadge ab1"><div class="abadge-dot"></div>Planner Agent · Monitoring Deadlines</div>
-        <div class="abadge ab2"><div class="abadge-dot"></div>Knowledge Agent · Searching Materials</div>
-        <div class="abadge ab3"><div class="abadge-dot"></div>Planning Agent · Optimizing Schedule</div>
-        <div class="abadge ab4"><div class="abadge-dot"></div>Solution Agent · Standby</div>
-      </div>
+      <!-- Agent activity bar removed -->
 
       <!-- Scrollable: cards + chat -->
       <div class="main-scroll">
 
         <!-- Agent Cards -->
-        <div class="cards-section" id="cards-section">
-          <div class="cs-hdr">
-            <span class="cs-eye">Cooperative Agent Network</span>
-            <span class="cs-ttl">Autonomous Capabilities</span>
-          </div>
+        <div class="cards-section" id="cards-section" style="display: none;">
           <div class="cards-grid">
 
             <div class="acard c-azure" onclick="openDeadlines()">
@@ -1364,36 +1461,30 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
           </div>
         </div>
 
+        <div class="suggested-actions-container">
+          <div class="prompt-chips">
+            <div class="p-chip" onclick="fillInput('send email to ')">send email to {any email}</div>
+            <div class="p-chip" onclick="fillInput('add calender event ')">add calender event</div>
+            <div class="p-chip" onclick="fillInput('list calender events')">list calender events</div>
+            <div class="p-chip" onclick="fillInput('what are my exam deadlines')">what are my exam deadlines</div>
+            <div class="p-chip" onclick="fillInput('what are my assignments')">what are my assignments</div>
+            <div class="p-chip" onclick="fillInput('what are my study materials')">what are my study materials</div>
+            <div class="p-chip" onclick="fillInput('start a greedy interview')">start a greedy interview</div>
+            <div class="p-chip" onclick="fillInput('what are marks of CN')">what are marks of CN</div>
+            <div class="p-chip" onclick="fillInput('am i short on attendace in any subject')">am i short on attendace in any subject</div>
+            <div class="p-chip" onclick="fillInput('send email to CN Professor')">send email to CN Professor</div>
+          </div>
+        </div>
+
         <!-- Agent Workspace Chat -->
         <div class="chat-section">
-          <div class="chat-hdr">
-            <div class="chat-hdr-l">
-              <div class="chat-hdr-icon">
-                <div class="chi-ring"></div>
-                <div class="chi-core"></div>
-              </div>
-              <div>
-                <div class="chat-hdr-title">Agent Coordination Workspace</div>
-                <div class="chat-hdr-sub">Cooperative AI · Real-time Streaming</div>
-              </div>
-            </div>
-            <button class="show-agents-btn" id="show-agents-btn" onclick="showAgents()">
-              ⊞ Show Agents
-            </button>
-          </div>
+
 
           <!-- chat-box ID required by js/main.js -->
           <div class="chat-box" id="chat-box">
-            <div class="chat-welcome" id="chat-welcome">
-              <div class="cw-orb"><div class="cw-c"></div><div class="cw-r1"></div><div class="cw-r2"></div></div>
-              <div class="cw-title">Agent Coordination Workspace</div>
-              <p class="cw-sub">Submit a task and all three agents coordinate automatically — the Planner routes it, the Knowledge Agent retrieves context, and the Automation Agent executes.</p>
-              <div class="prompt-chips">
-                <div class="p-chip" onclick="hideCardsForChat(); chipSend('What deadlines do I have this week?')"><span>Planner Agent</span>What deadlines this week?</div>
-                <div class="p-chip" onclick="hideCardsForChat(); chipSend('Help me solve my current assignment')"><span>Automation Agent</span>Solve my assignment</div>
-                <div class="p-chip" onclick="hideCardsForChat(); chipSend('Explain assignment question 3')"><span>Knowledge Agent</span>Explain assignment Q3</div>
-                <div class="p-chip" onclick="hideCardsForChat(); chipSend('Start a technical mock interview')"><span>Coach Agent</span>Start mock interview</div>
-              </div>
+            <div class="chat-welcome" id="chat-welcome" style="display: flex; flex-direction: column; align-items: center; justify-content: flex-start; height: 100%; text-align: center; padding-top: 15vh;">
+              <div style="font-family: var(--font-d); font-size: 32px; font-weight: 800; color: #fff; margin-bottom: 12px; letter-spacing: -0.02em;">ScholarSync</div>
+              <div style="font-family: var(--font-b); font-size: 18px; color: #fff; opacity: 0.95;">Hello, how can I assist you?</div>
             </div>
           </div>
         </div>
@@ -1406,21 +1497,21 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
           <button class="iframe-back-btn" onclick="closeViews()">← Back to Chat</button>
           <div><div class="iframe-title">Deadline Monitoring Agent</div><div class="iframe-sub">Planner Agent · Live Tracking</div></div>
         </div>
-        <iframe id="deadline-frame" src="http://localhost:5000/"></iframe>
+        <iframe id="deadline-frame" src="http://localhost:8000/deadlines"></iframe>
       </div>
       <div class="iframe-view" id="analysis-view">
         <div class="iframe-topbar">
           <button class="iframe-back-btn" onclick="closeViews()">← Back to Chat</button>
           <div><div class="iframe-title">Assignment Insight Agent</div><div class="iframe-sub">Insight Agent · Analysis Dashboard</div></div>
         </div>
-        <iframe src="http://localhost:8000/analysis-dashboard"></iframe>
+        <iframe src="http://localhost:8000/analysis-dashboard?v=4"></iframe>
       </div>
       <div class="iframe-view" id="assignment-view">
         <div class="iframe-topbar">
           <button class="iframe-back-btn" onclick="closeViews()">← Back to Chat</button>
           <div><div class="iframe-title">Assignment Solution Agent</div><div class="iframe-sub">Solver Agent · Intelligent Answers</div></div>
         </div>
-        <iframe src="http://localhost:3456/assignment_solver.html"></iframe>
+        <iframe src="http://localhost:8000/assignment-solver?v=6"></iframe>
       </div>
       <div class="iframe-view" id="ai-interviewer-view">
         <div class="iframe-topbar">
@@ -1434,7 +1525,7 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
           <button class="iframe-back-btn" onclick="closeViews()">← Back to Chat</button>
           <div><div class="iframe-title">Knowledge Retrieval Agent</div><div class="iframe-sub">Knowledge Agent · Study Materials</div></div>
         </div>
-        <iframe src="http://localhost:3000/material_view.html"></iframe>
+        <iframe src="http://localhost:8000/material-view"></iframe>
       </div>
 
       <!-- Agent thinking indicator — shown while main.js streams -->
@@ -1494,9 +1585,36 @@ html, body { height: 100%; overflow: hidden; background: var(--navy); color: var
    are handled by js/main.js exactly as in the original file.
 ──────────────────────────────────────────────────────────── */
 
+function toggleSidebar() {
+  const sidebar = document.getElementById('app-sidebar');
+  if (window.innerWidth <= 900) {
+    sidebar.classList.toggle('expanded');
+  } else {
+    sidebar.classList.toggle('collapsed');
+  }
+  
+  const icon = sidebar.querySelector('.hamburger-icon');
+  const isOpen = window.innerWidth <= 900 ? sidebar.classList.contains('expanded') : !sidebar.classList.contains('collapsed');
+  if (isOpen) {
+    icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
+  } else {
+    icon.innerHTML = '<line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line>';
+  }
+}
+
 function enterApp() {
   document.getElementById('page-home').classList.add('out');
   document.getElementById('page-app').classList.add('in');
+  
+  const sidebar = document.getElementById('app-sidebar');
+  if (window.innerWidth <= 900) {
+    sidebar.classList.add('expanded');
+  } else {
+    sidebar.classList.remove('collapsed');
+  }
+  
+  const icon = sidebar.querySelector('.hamburger-icon');
+  icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>';
 }
 
 function goHome() {
@@ -1570,13 +1688,27 @@ function closeViews() {
 function hideCardsForChat() {
   document.getElementById("cards-section").style.display = "none";
   const btn = document.getElementById("show-agents-btn");
-  if (btn) btn.classList.add("visible");
+  if (btn) btn.innerHTML = "⊞ Show Agents";
 }
 
 function showAgents() {
-  document.getElementById("cards-section").style.display = "block";
+  const cards = document.getElementById("cards-section");
   const btn = document.getElementById("show-agents-btn");
-  if (btn) btn.classList.remove("visible");
+  if (cards.style.display === "none") {
+    cards.style.display = "block";
+    if (btn) btn.innerHTML = "⊟ Hide Agents";
+  } else {
+    cards.style.display = "none";
+    if (btn) btn.innerHTML = "⊞ Show Agents";
+  }
+}
+
+function fillInput(text) {
+  const input = document.getElementById("message");
+  if (input) {
+    input.value = text;
+    input.focus();
+  }
 }
 
 async function quickSync() {
@@ -1614,7 +1746,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatBox = document.getElementById('chat-box');
   if (chatBox) {
     new MutationObserver(() => {
-      if (chatBox.children.length > 0) hideCardsForChat();
+      /* Only remove welcome if we have actual messages (not just the welcome itself) */
+      const hasMessages = chatBox.querySelector('.user') || chatBox.querySelector('.bot') || chatBox.querySelector('.msg-row');
+      if (hasMessages) {
+        hideCardsForChat();
+        const welcome = document.getElementById('chat-welcome');
+        if (welcome) welcome.remove();
+      }
     }).observe(chatBox, { childList: true });
   }
 

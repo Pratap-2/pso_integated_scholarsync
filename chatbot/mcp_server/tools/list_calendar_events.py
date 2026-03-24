@@ -1,4 +1,4 @@
-from ..calendar_auth import get_calendar_service
+from ..calendar_auth import get_calendar_service, CALENDAR_ID
 
 
 def list_calendar_events(data):
@@ -13,7 +13,7 @@ def list_calendar_events(data):
     end = f"{date}T23:59:59+05:30"
 
     events_result = service.events().list(
-        calendarId="primary",
+        calendarId=CALENDAR_ID,
         timeMin=start,
         timeMax=end,
         singleEvents=True,

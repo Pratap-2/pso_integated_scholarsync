@@ -1,4 +1,4 @@
-from ..calendar_auth import get_calendar_service
+from ..calendar_auth import get_calendar_service, CALENDAR_ID
 from datetime import datetime, timezone
 
 
@@ -14,7 +14,7 @@ def delete_event_by_title(data):
 
         # Get upcoming events
         events_result = service.events().list(
-            calendarId="primary",
+            calendarId=CALENDAR_ID,
             timeMin=datetime.now(timezone.utc).isoformat(),
             maxResults=50,
             singleEvents=True,
@@ -35,7 +35,7 @@ def delete_event_by_title(data):
                 event_id = event.get("id")
 
                 service.events().delete(
-                    calendarId="primary",
+                    calendarId=CALENDAR_ID,
                     eventId=event_id
                 ).execute()
 

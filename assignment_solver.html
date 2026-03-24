@@ -130,7 +130,17 @@ html, body {
   display: flex; flex-direction: column;
   background: rgba(5,13,28,.98); border-right: 1px solid var(--border);
   position: relative; overflow: hidden;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.sidebar.collapsed { width: 0; min-width: 0; border-right: none; }
+.menu-toggle-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(16,96,240,.1); border: 1px solid rgba(61,127,255,.28);
+  color: var(--azure-l); font-family: var(--font-m); font-size: 11px;
+  padding: 8px 12px; border-radius: 8px; cursor: pointer; transition: all .2s;
+  letter-spacing: 0.05em; text-transform: uppercase; flex-shrink: 0;
+}
+.menu-toggle-btn:hover { background: rgba(16,96,240,.2); border-color: rgba(61,127,255,.5); color: #fff; }
 .sidebar::after {
   content: ''; position: absolute; top: 0; right: 0; width: 1px; height: 100%;
   background: linear-gradient(to bottom, transparent, var(--azure-m) 30%, var(--electric) 70%, transparent);
@@ -313,12 +323,12 @@ html, body {
 .sc-head-lbl { font-family: var(--font-m); font-size: 9px; letter-spacing: .16em; text-transform: uppercase; color: var(--azure-l); }
 .sc-body { padding: 16px; }
 
-/* textarea */
+/* chat input */
 #question {
   width: 100%; background: rgba(2,8,16,.6); border: 1px solid var(--border2);
   color: var(--t1); font-family: var(--font-b); font-size: 13.5px;
   padding: 13px 16px; border-radius: 10px; outline: none;
-  caret-color: var(--azure-m); resize: vertical; min-height: 96px;
+  caret-color: var(--azure-m);
   transition: border-color .2s, background .2s, box-shadow .2s;
   line-height: 1.65;
 }
@@ -376,13 +386,13 @@ html, body {
 }
 .chat-msg.user .bubble-hdr { text-align: right; }
 .bubble {
-  padding: 12px 16px; border-radius: 12px; font-size: 13.5px; line-height: 1.6;
+  padding: 12px 16px; border-radius: 12px; font-size: 14.5px; line-height: 1.6;
 }
 .chat-msg.user .bubble {
   background: rgba(16,96,240,.15); border: 1px solid rgba(61,127,255,.3); color: var(--t1); border-bottom-right-radius: 2px;
 }
 .chat-msg.agent .bubble {
-  background: rgba(2,8,16,.5); border: 1px solid var(--border); color: var(--t2); border-bottom-left-radius: 2px; white-space: pre-wrap;
+  background: rgba(2,8,16,.5); border: 1px solid var(--border); color: var(--t1); border-bottom-left-radius: 2px; white-space: pre-wrap;
 }
 
 /* thinking dots */
@@ -405,6 +415,37 @@ html, body {
   padding: 22px 10px; text-align: center;
   font-family: var(--font-m); font-size: 11px; color: var(--t3); line-height: 1.65;
 }
+
+/* Split View Resizer */
+.resizer {
+  width: 6px;
+  background: var(--navy2);
+  cursor: col-resize;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  flex-shrink: 0;
+  transition: background 0.2s;
+  position: relative;
+  z-index: 10;
+}
+.resizer:hover, .resizer.dragging {
+  background: rgba(16,96,240, 0.4);
+}
+
+@media (max-width: 900px) {
+  #work-panel {
+    flex-direction: column-reverse !important;
+  }
+  #chat-side { width: 100% !important; flex: 1 1 50% !important; border-right: none !important; border-top: 1px solid var(--border); }
+  #pdf-side { width: 100% !important; flex: 1 1 50% !important; }
+  .resizer {
+    width: 100% !important;
+    height: 6px !important;
+    cursor: row-resize !important;
+    border-left: none; border-right: none;
+    border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  }
+}
 </style>
 </head>
 <body>
@@ -414,26 +455,6 @@ html, body {
 
 <div class="shell">
 
-  <!-- Header -->
-  <header class="header">
-    <div class="hdr-logo">
-      <div class="hdr-hex"></div>
-      <div class="hdr-hex2"></div>
-      <div class="hdr-dot"></div>
-    </div>
-    <div>
-      <div class="hdr-title">Assignment Solver</div>
-      <div class="hdr-sub">Solver Agent · AI-Powered</div>
-    </div>
-    <div class="hdr-badge">
-      <div class="hdr-badge-dot"></div>
-      Solver Online
-    </div>
-    <button onclick="if(window.parent && window.parent.closeViews){window.parent.closeViews()}else if(history.length>1){history.back()}else{window.location.href='scholar_sync.html'}" style="margin-left:auto;display:flex;align-items:center;gap:7px;padding:7px 15px;background:rgba(16,96,240,.1);border:1px solid rgba(61,127,255,.28);border-radius:8px;color:#6aa0ff;font-size:12px;cursor:pointer;transition:all .2s;font-family:inherit;" onmouseover="this.style.background='rgba(16,96,240,.22)';this.style.borderColor='rgba(61,127,255,.55)'" onmouseout="this.style.background='rgba(16,96,240,.1)';this.style.borderColor='rgba(61,127,255,.28)'">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
-      Back to Chat
-    </button>
-  </header>
 
   <!-- Body -->
   <div class="body">
@@ -468,7 +489,10 @@ html, body {
     <main class="main">
 
       <!-- Empty state -->
-      <div class="empty-state" id="empty-state">
+      <div class="empty-state" id="empty-state" style="position: relative;">
+        <button class="menu-toggle-btn" onclick="toggleSidebar()" style="position: absolute; top: 20px; left: 24px;">
+          ☰ Assignments
+        </button>
         <div class="empty-orb">
           <div class="eo-core"></div>
           <div class="eo-r1"></div>
@@ -483,46 +507,43 @@ html, body {
       </div>
 
       <!-- Work panel (shown after selection) -->
-      <div class="work-panel" id="work-panel">
+      <div class="work-panel" id="work-panel" style="flex-direction: row; height: 100%;">
 
-        <!-- Assignment info strip -->
-        <div class="asgn-strip" style="flex-wrap: wrap;">
-          <div class="strip-icon">📋</div>
-          <div class="strip-text" style="flex: 1 1 auto; min-width: 200px;">
-            <div class="strip-kicker">Active Assignment</div>
-            <div id="title">—</div>
-            <div id="desc"></div>
-          </div>
-          <div class="strip-actions" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: auto;">
-            <button class="ss-btn btn-teal" onclick="generateFullSolution()" style="padding: 8px 14px; font-size: 11px;">
-              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" style="margin-right:4px; vertical-align:middle;">
-                <path d="M12 10v6m0 0l-3-3m3 3l3-3M3 17v3a1 1 0 001 1h16a1 1 0 001-1v-3M3 7V4a1 1 0 011-1h4l2 3h9a1 1 0 011 1v3" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              Full Solution
+        <!-- Chat Side -->
+        <div id="chat-side" style="flex: 1; display: flex; flex-direction: column; border-right: 1px solid var(--border); height: 100%; position: relative; min-width: 0;">
+          <!-- Assignment info strip -->
+          <div class="asgn-strip" style="flex-wrap: nowrap; padding: 14px 20px; align-items: center;">
+            <button class="menu-toggle-btn" onclick="toggleSidebar()" style="margin-right: 12px; padding: 6px 12px;">
+              ☰
             </button>
-            <button class="ss-btn btn-ghost" onclick="viewAssignment()" style="padding: 8px 14px; font-size: 11px;">
-              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" style="margin-right:4px; vertical-align:middle;">
-                <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke="#6aa0ff" stroke-width="2"/><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke="#6aa0ff" stroke-width="2"/>
-              </svg>
-              View Document
+            <div class="strip-icon">📋</div>
+            <div class="strip-text">
+              <div class="strip-kicker">Active Assignment</div>
+              <div id="title">—</div>
+              <div id="desc" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;"></div>
+            </div>
+          </div>
+
+          <!-- Scrollable work area -->
+          <div class="work-scroll" id="chat-history" style="flex: 1; overflow-y: auto;">
+            <div style="text-align: center; color: var(--t3); margin: auto;">Ask a question to start the conversation...</div>
+          </div>
+
+          <!-- Chat Input Area -->
+          <div class="chat-input-area" style="padding: 16px 20px; background: rgba(2,8,16,.8); border-top: 1px solid var(--border); display: flex; gap: 10px; flex-shrink: 0;">
+            <input type="text" id="question" placeholder="Type your question..." style="flex:1; background: rgba(8,21,42,.8); border: 1px solid var(--border2); color: var(--t1); border-radius: 8px; padding: 10px 14px; outline: none; font-family: var(--font-b); font-size: 13.5px;" onkeypress="if(event.key === 'Enter') askAI()">
+            <button class="ss-btn btn-primary" onclick="askAI()" style="padding: 10px 16px;">
+              Ask AI
             </button>
           </div>
         </div>
 
-        <!-- Scrollable work area -->
-        <div class="work-scroll" id="chat-history">
-          <div style="text-align: center; color: var(--t3); margin: auto;">Ask a question to start the conversation...</div>
-        </div>
+        <!-- Draggable Resizer -->
+        <div id="drag-resizer" class="resizer"></div>
 
-        <!-- Chat Input Area -->
-        <div class="chat-input-area" style="padding: 16px 24px; background: rgba(2,8,16,.8); border-top: 1px solid var(--border); display: flex; gap: 10px;">
-          <input type="text" id="question" placeholder="Type your question..." style="flex:1; background: rgba(8,21,42,.8); border: 1px solid var(--border2); color: var(--t1); border-radius: 8px; padding: 10px 14px; outline: none; font-family: var(--font-b); font-size: 13.5px;" onkeypress="if(event.key === 'Enter') askAI()">
-          <button class="ss-btn btn-primary" onclick="askAI()" style="padding: 10px 20px;">
-            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" style="margin-right:4px; vertical-align:middle;">
-              <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Ask AI
-          </button>
+        <!-- PDF Side -->
+        <div id="pdf-side" style="flex: 1; height: 100%; background: #ffffff; display: flex; flex-direction: column;">
+          <iframe id="pdf-viewer" style="width: 100%; flex: 1; border: none;" src=""></iframe>
         </div>
       </div>
 
@@ -607,7 +628,7 @@ async function loadAssignments() {
 /* ── SELECT ASSIGNMENT ── */
 function selectAssignment(a, card) {
   document.querySelectorAll(".asgn-card").forEach(c => c.classList.remove("active"));
-  card.classList.add("active");
+  if (card) card.classList.add("active");
 
   document.getElementById("title").innerText = a.title;
   document.getElementById("desc").innerText  = a.description;
@@ -620,6 +641,22 @@ function selectAssignment(a, card) {
 
   assignmentDoc = a.assignmentDoc;
   assignmentId  = a._id || a.id || a.title.replace(/\s+/g, "_");
+
+  // Load PDF in iframe natively
+  const pdfViewer = document.getElementById("pdf-viewer");
+  if(pdfViewer) {
+    if (a.assignmentDoc) {
+      // Proxy the PDF through our server so the browser uses its native PDF viewer, 
+      // which supports touchpad pinch-to-zoom perfectly unlike Google Drive's preview UI
+      pdfViewer.src = BASE_URL + '/proxy-pdf?url=' + encodeURIComponent(a.assignmentDoc);
+    } else {
+      // Create a dummy PDF display or just an empty src for now if none exists
+      pdfViewer.src = "about:blank"; 
+    }
+  }
+
+  // Automatically collapse sidebar
+  document.querySelector('.sidebar').classList.add('collapsed');
 }
 
 /* ── ASK AI ── */
@@ -689,63 +726,57 @@ async function askAI() {
   }
 }
 
-/* ── GENERATE FULL SOLUTION ── */
-async function generateFullSolution() {
-  if (!assignmentDoc) { alert("Please select an assignment first"); return; }
-
-  const chatContainer = document.getElementById("chat-history");
-  if(chatHistory.length === 0) chatContainer.innerHTML = "";
-
-  const thinkId = "think-ans-" + Date.now();
-  chatContainer.innerHTML += `
-    <div class="chat-msg agent" id="${thinkId}">
-      <div class="bubble-hdr">Solver Agent</div>
-      <div class="bubble thinking-wrap" style="padding: 10px 16px;">
-        <div class="thinking-dots"><span></span><span></span><span></span></div>
-        <span class="thinking-label" style="margin-left:12px;">Generating full solution...</span>
-      </div>
-    </div>
-  `;
-  chatContainer.scrollTop = chatContainer.scrollHeight;
-
-  try {
-    let res = await fetch(BASE_URL + "/generate-assignment-pdf", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assignment_doc: assignmentDoc, material_links: materialLinks, assignment_id: assignmentId })
-    });
-    if (!res.ok) throw new Error("PDF generation failed");
-    const blob = await res.blob();
-    const url  = window.URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url; a.download = `Solved_${assignmentId}.pdf`;
-    document.body.appendChild(a); a.click(); a.remove();
-    
-    document.getElementById(thinkId).remove();
-    chatContainer.innerHTML += `
-      <div class="chat-msg agent">
-        <div class="bubble-hdr">Solver Agent</div>
-        <div class="bubble" style="color: var(--mint);">✦ Solution PDF generated and downloaded successfully.</div>
-      </div>
-    `;
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-  } catch (err) {
-    console.error(err);
-    document.getElementById(thinkId).remove();
-    chatContainer.innerHTML += `
-      <div class="chat-msg agent">
-        <div class="bubble-hdr">Solver Agent</div>
-        <div class="bubble" style="color: #ff6b7a;">Failed to generate PDF. Please try again.</div>
-      </div>
-    `;
-    chatContainer.scrollTop = chatContainer.scrollHeight;
-  }
+/* ── TOGGLE SIDEBAR ── */
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('collapsed');
 }
 
-/* ── VIEW ASSIGNMENT ── */
-function viewAssignment() {
-  if (!assignmentDoc) { alert("Please select an assignment first"); return; }
-  window.open(assignmentDoc, "_blank");
+/* ── RESIZER LOGIC ── */
+const resizer = document.getElementById('drag-resizer');
+const chatSide = document.getElementById('chat-side');
+const pdfSide = document.getElementById('pdf-side');
+const workPanel = document.getElementById('work-panel');
+let isResizing = false;
+
+if (resizer) {
+  resizer.addEventListener('mousedown', (e) => {
+    isResizing = true;
+    resizer.classList.add('dragging');
+    document.body.style.cursor = window.innerWidth > 900 ? 'col-resize' : 'row-resize';
+    const pdfViewer = document.getElementById('pdf-viewer');
+    if (pdfViewer) pdfViewer.style.pointerEvents = 'none';
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!isResizing) return;
+    if (window.innerWidth > 900) {
+      // Horizontal resize
+      const containerOffsetLeft = workPanel.getBoundingClientRect().left;
+      const pointerRelativeXpos = e.clientX - containerOffsetLeft;
+      const containerWidth = workPanel.offsetWidth;
+      let newFlexBasis = Math.max(20, Math.min(80, (pointerRelativeXpos / containerWidth) * 100));
+      chatSide.style.flex = `0 0 ${newFlexBasis}%`;
+      pdfSide.style.flex = `1 1 0%`;
+    } else {
+      // Vertical resize (column-reverse, so Y movement adjusts height from bottom)
+      const containerOffsetBottom = workPanel.getBoundingClientRect().bottom;
+      const pointerRelativeYpos = containerOffsetBottom - e.clientY;
+      const containerHeight = workPanel.offsetHeight;
+      let newFlexBasis = Math.max(20, Math.min(80, (pointerRelativeYpos / containerHeight) * 100));
+      chatSide.style.flex = `0 0 ${newFlexBasis}%`;
+      pdfSide.style.flex = `1 1 0%`;
+    }
+  });
+
+  document.addEventListener('mouseup', () => {
+    if (isResizing) {
+      isResizing = false;
+      resizer.classList.remove('dragging');
+      document.body.style.cursor = '';
+      const pdfViewer = document.getElementById('pdf-viewer');
+      if (pdfViewer) pdfViewer.style.pointerEvents = 'auto';
+    }
+  });
 }
 
 /* ── START ── */

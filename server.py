@@ -5,6 +5,7 @@ if sys.platform == 'win32':
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -68,6 +69,28 @@ class HistoryRequest(BaseModel):
 class DeleteThreadRequest(BaseModel):
     thread_id: str
 
+
+@app.get("/")
+def serve_ui():
+    return FileResponse("scholar_sync.html")
+
+@app.get("/assignment-solver")
+def serve_assignment_solver():
+    return FileResponse("assignment_solver.html")
+
+@app.get("/material-view")
+def serve_material_view():
+    return FileResponse("material_view.html")
+
+@app.get("/deadlines")
+def serve_deadlines():
+    return FileResponse("index.html")
+
+@app.get("/sync-db")
+def serve_sync_db():
+    return FileResponse("chatbot/sync/sync_db.json", media_type="application/json")
+
+app.mount("/js", StaticFiles(directory="js"), name="js")
 
 # ---------------------------
 # Streaming chat endpoint
@@ -195,9 +218,23 @@ def proxy_exams():
     except Exception as e:
         return {"success": False, "error": str(e)}
 
+from fastapi import Response
+import re
 
-
-
+@app.get("/proxy-pdf")
+def proxy_pdf(url: str):
+    try:
+        match = re.search(r'/d/([a-zA-Z0-9_-]+)', url)
+        if match:
+            file_id = match.group(1)
+            direct_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+            r = requests.get(direct_url)
+            return Response(content=r.content, media_type="application/pdf")
+        else:
+            r = requests.get(url)
+            return Response(content=r.content, media_type="application/pdf")
+    except Exception as e:
+        return {"success": False, "error": str(e)}
 
 class AssignmentRequest(BaseModel):
 

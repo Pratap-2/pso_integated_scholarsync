@@ -1,40 +1,36 @@
 import os
-import pickle
-
-from google_auth_oauthlib.flow import InstalledAppFlow
-from google.auth.transport.requests import Request
+import json
+import httplib2
+import google_auth_httplib2
+from google.oauth2 import service_account
 from googleapiclient.discovery import build
 
 SCOPES = ["https://www.googleapis.com/auth/calendar"]
+CALENDAR_ID = "scholarsync26@gmail.com"
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+SERVICE_ACCOUNT_FILE = os.path.join(BASE_DIR, "service-account.json")
 
 
 def get_calendar_service():
 
-    creds = None
-    workspace_dir = r"c:\Users\HP\OneDrive\Desktop\scholar_sync"
-    token_path = os.path.join(workspace_dir, "token.pickle")
-    creds_path = os.path.join(workspace_dir, "credentials.json")
+    service_account_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
 
-    if os.path.exists(token_path):
-        with open(token_path, "rb") as token:
-            creds = pickle.load(token)
+    if service_account_json:
+        service_account_info = json.loads(service_account_json)
+        credentials = service_account.Credentials.from_service_account_info(
+            service_account_info,
+            scopes=SCOPES
+        )
+    else:
+        credentials = service_account.Credentials.from_service_account_file(
+            SERVICE_ACCOUNT_FILE,
+            scopes=SCOPES
+        )
 
-    if not creds or not creds.valid:
+    authed_http = google_auth_httplib2.AuthorizedHttp(
+        credentials,
+        http=httplib2.Http(timeout=10)
+    )
 
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-
-        else:
-            if not os.path.exists(creds_path):
-                creds_path = os.path.join(workspace_dir, "chatbot", "credentials.json")
-                print("Loading credentials from:", creds_path)
-            flow = InstalledAppFlow.from_client_secrets_file(
-                creds_path,
-                SCOPES
-            )
-            creds = flow.run_local_server(port=0)
-
-        with open(token_path, "wb") as token:
-            pickle.dump(creds, token)
-
-    return build("calendar", "v3", credentials=creds)
+    return build("calendar", "v3", http=authed_http)
