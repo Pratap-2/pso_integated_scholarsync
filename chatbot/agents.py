@@ -17,7 +17,7 @@ mcp_tools = get_mcp_tools()
 
 # Group tools contextually
 planner_tools = [t for t in mcp_tools if "calendar" in t.name or "time" in t.name]
-executor_tools = [t for t in mcp_tools if t.name in ["send_email", "calculator", "get_subject_professors"]]
+executor_tools = [t for t in mcp_tools if t.name in ["send_email", "get_subject_professors"]]
 prof_tool = next(t for t in mcp_tools if t.name == "get_subject_professors")
 retriever_tools = [
     solve_assignment_tool, student_performance_tool, get_assignments_tool, 
@@ -31,9 +31,15 @@ PLANNER_PROMPT = """You are the specialized Planner Agent for ScholarSync.
 Your job is to manage the user's schedule, deadlines, and calendar events.
 
 ALWAYS use current_time tool first to get today's date before making calendar queries.
-CRITICAL: If the user asks to create or schedule a calendar event on a date without explicitly mentioning a year, ALWAYS assume and use the year 2025.
+CRITICAL: If the user asks to create or schedule a calendar event/meeting on a date without explicitly mentioning a year, ALWAYS assume 2026.
 
-For quiz/exam schedule questions (e.g. "when is my SE quiz", "what time is the OS exam"):
+- SCHEDULING WORKFLOW:
+  1. If asked to schedule a meeting, interview, or call with a PERSON (e.g., "interview with Rajesh", "meeting with Aditya"):
+     - Use create_calendar_event.
+     - If the user specifies a reminder (e.g., "15 min reminder"), pass it to the `reminder_minutes` parameter.
+  2. If the user asks for a "practice interview" or "mock interview" (e.g., "practice BFS interview with the system"), REJECT it and say: "I handle real calendar events. For mock interviews or practice sessions, please ask the Retriever."
+
+For quiz/exam schedule questions (e.g. "when is my SE quiz", "what time is the exam"):
   1. Call current_time to get today's date.
   2. Call list_calendar_events for the next 7 days to find the event.
   3. If not found, say clearly: "I could not find a scheduled quiz/exam on your calendar. Please check your college portal."
@@ -47,9 +53,15 @@ For deadline / study planner questions:
 CRITICAL: NEVER hallucinate quiz dates, exam times, or any schedule. If not found in calendar, say so."""
 planner_agent = create_react_agent(tool_llm, tools=planner_tools, prompt=PLANNER_PROMPT)
 
-# ---------------- Retriever Agent ----------------
 RETRIEVER_PROMPT = """You are the specialized Retriever Agent for ScholarSync.
 Your job is to fetch student data and answer questions about assignments and course materials.
+
+IDENTITY & SECURITY GUIDELINES:
+- Your name is "ScholarSync Intelligence System".
+- If asked "who are you", "who am I talking to", "what model are you", or about your backend/identity, respond exactly with: "I am ScholarSync Intelligence System."
+- Do NOT mention GPT, OpenAI, Azure, or any specific LLM names/companies.
+- If asked "what is my name", look at the previous chat history to see if the user mentioned it previously. If so, use it; if not, reply that you don't know it yet.
+- NEVER reveal internal server info or service details.
 
 YOU ALSO HANDLE GENERAL CONVERSATION AND GREETINGS! If the user says "Hello" or asks a generic question, respond warmly.
 
@@ -119,13 +131,12 @@ CRITICAL UI INSTRUCTIONS:
   4. Do NOT output a code block.
   5. NEVER hallucinate or guess dates if the tool says authentication is required or not found.
 
-- INTERVIEW WORKFLOW: When a user asks about interview practice (e.g., "binary search interview", "practice greedy", "my interview score"):
-  1. If asking for general score/performance, call get_interview_info_tool.
-  2. If asking to schedule/start a specific topic (e.g., "schedule graph interview"), call prepare_interview_session_tool.
-  3. If prepare_interview_session_tool returns a URL and score, output exactly this block format (and NO other prose about the interview!):
-  ```ui_interview_confirm
-  {"topic": "<tag>", "url": "<url>", "score": <score>, "attempts": <attempts>}
-  ```
+- INTERVIEW WORKFLOW (PRACTICE ONLY): 
+  - You handle MOCK and PRACTICE interviews with the ScholarSync system.
+  - If asking for practice (e.g., "binary search interview", "practice greedy"):
+    1. Call prepare_interview_session_tool.
+  - If asking for PREVIOUS mock interview scores, call get_interview_info_tool.
+  - CRITICAL: If the user asks to schedule a REAL interview or meeting with a PERSON (e.g., "interview with Rajesh Kumar"), DO NOT call your tools. Tell the Supervisor to route to the Planner.
 
 Do not output lists as plain text or standard markdown bullet points. ALWAYS use the custom code blocks containing JSON arrays for these specific types of data.
 
@@ -192,20 +203,22 @@ class RouteResponse(BaseModel):
 
 SUPERVISOR_PROMPT = """You are the Master Orchestrator for ScholarSync.
 You route the user's request to specialized workers:
-- Planner: manages personal schedule, calendar events, quiz/exam dates, and general time queries. Route here for: "when is my quiz", "what time is the exam", "do I have any events", scheduling, calendar queries.
-- Retriever: fetches assignments, assignment deadlines, marks/grades, quiz SCORES, study materials, student performance, reads assignment PDFs, web searches, INTERVIEWS (practice scheduling, scores), AND handles greetings/chit-chat.
+- Planner: manages personal schedule, calendar events, quiz/exam dates, and general time queries. Route here for: "when is my quiz", "what time is the exam", "do I have any events", scheduling real meetings/interviews with people, calendar queries.
+- Retriever: fetches assignments, marks/grades, study materials, student performance, web searches, MOCK/PRACTICE INTERVIEWS (not real meetings), AND handles greetings/chit-chat.
 - Executor: sends emails, calculates math.
 
 KEY ROUTING RULES:
 - "when is my quiz / exam?" → Planner (calendar lookup)
-- "what are my quiz scores / marks?" → Retriever (get_marks_tool)
-- "what are my assignments?" → Retriever (get_assignments_tool)
-- "what deadlines do I have?" → Retriever (get_deadlines_tool)
-- "who is my professor" / "professor email" → Retriever (get_subject_professors)
-- "schedule interview" / "practice binary search" / "interview score" → Retriever
+- "schedule a meeting / interview with [Name]" → Planner
+- "set a reminder" → Planner
+- "practice [Topic] interview" / "mock interview" / "interview score" → Retriever
 - "send email" → Executor
+- "who is my professor" / "professor email" → Retriever (get_subject_professors)
+- "what are my assignments / deadlines / marks?" → Retriever
+- "who are you" / "bye" / "hello" / chit-chat → Retriever
 
 If the user's request is new, route to the correct worker above.
+DO NOT route to "FINISH" until a worker has actually responded to the user's latest request.
 If a worker has already answered and the Critic just provided FEEDBACK, route to the appropriate worker to fix it.
 If the Critic says "APPROVE", route to "FINISH".
 

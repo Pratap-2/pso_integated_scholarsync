@@ -1,3 +1,5 @@
+import { postProcessBotDiv } from "./postprocess.js";
+
 export function addMessage(sender, text){
 
     const chatBox = document.getElementById("chat-box");
@@ -5,9 +7,14 @@ export function addMessage(sender, text){
     const div = document.createElement("div");
 
     div.className = sender;
-
-    div.innerText = text;
-
+    if (sender === "bot") {
+        // Try to render rich UI cards first; fall back to markdown
+        if (!postProcessBotDiv(div, text)) {
+            div.innerHTML = marked.parse(text);
+        }
+    } else {
+        div.innerText = text;
+    }
     chatBox.appendChild(div);
 
     chatBox.scrollTop = chatBox.scrollHeight;
@@ -24,6 +31,8 @@ export function createBotMessage(){
     div.innerText = "";
 
     chatBox.appendChild(div);
+
+    chatBox.scrollTop = chatBox.scrollHeight;
 
     return div;
 }

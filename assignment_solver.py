@@ -330,12 +330,41 @@ def generate_solution_pdf(solution_text, assignment_id):
     path = f"{PDF_DIR}/{file_name}"
 
     styles = getSampleStyleSheet()
-
     story = []
 
+    # Simple Markdown to ReportLab XML conversion
+    # Note: ReportLab Paragraph supports <b>, <i>, <u>, <font>, <br/>
+    
+    # Process line by line for headers to avoid splitting issues
     for line in solution_text.split("\n"):
-        story.append(Paragraph(line, styles["Normal"]))
-        story.append(Spacer(1, 8))
+        line = line.strip()
+        if not line:
+            story.append(Spacer(1, 6))
+            continue
+            
+        # Headers
+        if line.startswith("### "):
+            line = f'<font size="13" color="#1060f0"><b>{line[4:]}</b></font>'
+        elif line.startswith("## "):
+            line = f'<font size="15" color="#1060f0"><b>{line[3:]}</b></font>'
+        elif line.startswith("# "):
+            line = f'<font size="17" color="#1060f0"><b>{line[2:]}</b></font>'
+            
+        # Bold: **text** -> <b>text</b>
+        line = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', line)
+        # Italic: *text* -> <i>text</i>
+        line = re.sub(r'\*(.*?)\*', r'<i>\1</i>', line)
+        # List bullets: - text -> &bull; text
+        if line.startswith("- "):
+            line = "&bull; " + line[2:]
+
+        try:
+            story.append(Paragraph(line, styles["Normal"]))
+        except:
+            # Fallback if XML tags are malformed
+            story.append(Paragraph(re.sub(r'<.*?>', '', line), styles["Normal"]))
+            
+        story.append(Spacer(1, 6))
 
     pdf = SimpleDocTemplate(path, pagesize=A4)
 

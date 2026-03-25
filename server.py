@@ -17,6 +17,17 @@ from chatbot import memory
 from typing import List,Optional
 from assignment_solver import solve_assignment
 from fastapi.responses import FileResponse
+
+# ---------------------------
+# In-memory auth state
+# Resets every time the server restarts — no database needed.
+# ---------------------------
+
+_AUTH_EMAIL    = "scholarsync26@gmail.com"
+_AUTH_PASSWORD = "scholarsync26"
+_session_authenticated = False   # single shared flag
+
+
 # ---------------------------
 # Lifespan (startup/shutdown)
 # ---------------------------
@@ -69,6 +80,35 @@ class HistoryRequest(BaseModel):
 class DeleteThreadRequest(BaseModel):
     thread_id: str
 
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+# ---------------------------
+# Auth endpoints
+# ---------------------------
+
+@app.get("/auth/status")
+def auth_status():
+    """Returns whether the user has already authenticated this server session."""
+    return {"authenticated": _session_authenticated}
+
+
+@app.post("/auth/login")
+def auth_login(req: LoginRequest):
+    """Validates credentials and sets the in-memory session flag."""
+    global _session_authenticated
+    if req.email == _AUTH_EMAIL and req.password == _AUTH_PASSWORD:
+        _session_authenticated = True
+        return {"success": True}
+    return {"success": False, "error": "Invalid email or password."}
+
+
+# ---------------------------
+# Page routes
+# ---------------------------
 
 @app.get("/")
 def serve_ui():
@@ -136,14 +176,18 @@ async def get_history_endpoint(req: HistoryRequest):
     if not state or "messages" not in state.values:
         return {"history": []}
 
+    filtered_history = []
+    for msg in state.values["messages"]:
+        content = getattr(msg, "content", "")
+        if content and "CRITIC FEEDBACK" in content:
+            continue
+        filtered_history.append({
+            "type": msg.type,
+            "content": content
+        })
+
     return {
-        "history": [
-            {
-                "type": msg.type,
-                "content": msg.content
-            }
-            for msg in state.values["messages"]
-        ]
+        "history": filtered_history
     }
 
 

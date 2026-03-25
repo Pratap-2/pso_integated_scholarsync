@@ -92,17 +92,18 @@ def send_email(to: str, subject: str, body: str) -> str:
 
 # ---------------- Create Calendar Event ----------------
 @tool
-def create_calendar_event(title: str, start_time: str, end_time: str) -> str:
-    """Create a Google Calendar event."""
+def create_calendar_event(title: str, start_time: str, end_time: str, reminder_minutes: int | None = None) -> str:
+    """Create a Google Calendar event. reminder_minutes is optional."""
 
-    return call_mcp(
-        "/tools/create_calendar_event",
-        {
-            "title": title,
-            "start_time": start_time,
-            "end_time": end_time
-        }
-    )
+    payload: dict[str, str | int] = {
+        "title": title,
+        "start_time": start_time,
+        "end_time": end_time
+    }
+    if reminder_minutes is not None:
+        payload["reminder_minutes"] = reminder_minutes
+
+    return call_mcp("/tools/create_calendar_event", payload)
 
 
 # ---------------- Delete Calendar Event ----------------

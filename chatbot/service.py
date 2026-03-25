@@ -106,12 +106,19 @@ async def chat_stream(user_message: str, thread_id: str):
             yield f"⚠️ An error occurred: {str(e)[:200]}"
             return
         
-        # Extract the final AI message (the one right before Critic's final APPROVE)
+        # Extract only the messages added in THIS turn
+        messages_history = final_state.get("messages", [])
+        new_messages = messages_history[prev_msg_count:] if prev_msg_count < len(messages_history) else []
+
+        # Extract the final AI message from the new messages in this turn
         final_ai_message = ""
-        for msg in reversed(final_state["messages"]):
-            if getattr(msg, "type", "") == "ai" and msg.content:
-                # Skip the Critic's APPROVE message
-                if "APPROVE" not in msg.content.upper() and "CRITIC FEEDBACK" not in msg.content:
+        for msg in reversed(new_messages):
+            # Check both .type attribute and class name for AI messages
+            is_ai = getattr(msg, "type", "") == "ai" or "AIMessage" in type(msg).__name__
+            if is_ai and msg.content:
+                # Skip the Critic's APPROVE message (if applicable)
+                msg_content_upper = str(msg.content).upper()
+                if "APPROVE" not in msg_content_upper and "CRITIC FEEDBACK" not in msg_content_upper:
                     final_ai_message = msg.content
                     break
                     
@@ -119,13 +126,10 @@ async def chat_stream(user_message: str, thread_id: str):
             yield "⚠️ The agent was unable to produce a response. Please try again."
             return
 
-        # Only look at messages added in THIS turn (not the full history)
-        new_messages = final_state["messages"][prev_msg_count:]
-
         # Inject ui_assignments / ui_materials blocks if the LLM didn't format them
         final_ai_message = _inject_ui_blocks(final_ai_message, new_messages)
 
-        yield f"\n\n🤖 **Agent Network**:\n"
+        yield f"\n\n**Agent Network**:\n"
         
         # Stream the approved text so the frontend UI types it out smoothly
         chunk_size = 15

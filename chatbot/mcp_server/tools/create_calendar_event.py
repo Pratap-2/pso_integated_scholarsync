@@ -37,6 +37,20 @@ def create_calendar_event(data):
             }
         }
 
+        # Add reminders if requested
+        if "reminder_minutes" in data:
+            try:
+                mins = int(data["reminder_minutes"])
+                event["reminders"] = {
+                    "useDefault": False,
+                    "overrides": [
+                        {"method": "popup", "minutes": mins},
+                        {"method": "email", "minutes": mins}
+                    ]
+                }
+            except Exception:
+                pass
+
         event = service.events().insert(
             calendarId=CALENDAR_ID,
             body=event
