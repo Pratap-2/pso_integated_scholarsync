@@ -186,7 +186,7 @@ body::after{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
 <div id="materials" class="grid"></div>
 
 <script>
-const API = "http://localhost:8000/proxy/materials"
+const API = "/proxy/materials"
 let materials = []
 
 function getDrivePreview(url){
@@ -258,7 +258,7 @@ async function load(){
   }catch{
     document.getElementById("status").style.display = "none"
     document.getElementById("materials").innerHTML = `
-      <div class="error-msg">Could not connect to backend · Make sure the FastAPI server is running at localhost:8000</div>`
+      <div class="error-msg">Could not connect to backend · Make sure the FastAPI server is running</div>`
   }
 }
 

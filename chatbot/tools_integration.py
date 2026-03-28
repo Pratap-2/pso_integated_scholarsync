@@ -347,9 +347,11 @@ def prepare_interview_session_tool(topic: str) -> str:
     return json.dumps({
         "topic": tag,
         "url": url,
+        "full_interview_link": url,
         "performance_score": perf,
         "attempts": tries,
-        "performance_summary": summary
+        "performance_summary": summary,
+        "IMPORTANT": f"The interview link is: {url} — ALWAYS use this FULL URL when mentioning the interview link. NEVER use a relative path."
     }, indent=2)
 
 

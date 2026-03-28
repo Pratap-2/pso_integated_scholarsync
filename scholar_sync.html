@@ -3691,7 +3691,7 @@
               <div class="iframe-sub">Planner Agent · Live Tracking</div>
             </div>
           </div>
-          <iframe id="deadline-frame" src="http://localhost:8000/deadlines"></iframe>
+          <iframe id="deadline-frame" src="/deadlines"></iframe>
         </div>
         <div class="iframe-view" id="analysis-view">
           <div class="iframe-topbar">
@@ -3701,7 +3701,7 @@
               <div class="iframe-sub">Insight Agent · Analysis Dashboard</div>
             </div>
           </div>
-          <iframe src="http://localhost:8000/analysis-dashboard?v=4"></iframe>
+          <iframe src="/analysis-dashboard?v=4"></iframe>
         </div>
         <div class="iframe-view" id="assignment-view">
           <div class="iframe-topbar">
@@ -3711,7 +3711,7 @@
               <div class="iframe-sub">Helper Agent · Intelligent Answers</div>
             </div>
           </div>
-          <iframe src="http://localhost:8000/assignment-solver?v=6"></iframe>
+          <iframe src="/assignment-solver?v=6"></iframe>
         </div>
         <div class="iframe-view" id="ai-interviewer-view">
           <div class="iframe-topbar">
@@ -3732,7 +3732,7 @@
               <div class="iframe-sub">Knowledge Agent · Study Materials</div>
             </div>
           </div>
-          <iframe src="http://localhost:8000/material-view"></iframe>
+          <iframe src="/material-view"></iframe>
         </div>
 
 
@@ -3891,7 +3891,7 @@
       const loader = document.getElementById("sync-loader");
       loader.style.display = "flex";
       try {
-        const res = await fetch("http://localhost:8000/quicksync", { method: "POST" });
+        const res = await fetch("/quicksync", { method: "POST" });
         await res.json();
         loader.style.display = "none";
         alert("Calendars synced successfully");

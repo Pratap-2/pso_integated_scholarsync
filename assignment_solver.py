@@ -247,7 +247,18 @@ Return ONLY the reformulated search query, without quotes.
 
     # Retrieve relevant chunks via vector search using the optimized query
     context_chunks = _vector_search(search_query, doc_keys)
-    context = "\n\n".join(context_chunks)
+    vector_context = "\n\n".join(context_chunks)
+
+    # Also load the raw assignment text so the LLM always sees all questions
+    raw_assignment_text = ""
+    if assignment_url:
+        try:
+            path = download_pdf(assignment_url)
+            raw_assignment_text = load_pdf_text(path)[:6000]  # cap to avoid token overflow
+        except Exception as e:
+            print(f"[AssignmentHelper] Could not load raw PDF: {e}")
+
+    context = f"=== FULL ASSIGNMENT TEXT ===\n{raw_assignment_text}\n\n=== RELEVANT STUDY MATERIAL SNIPPETS ===\n{vector_context}"
 
     system_prompt = """You are an Assignment Helper and academic mentor.
 
@@ -259,8 +270,9 @@ Rules:
 - Guide the student step-by-step so they can solve it themselves.
 - Use headings if needed.
 - Be encouraging and supportive.
-- If the required context for a specific question is not found in the documents, gently inform them.
-- If the user just asks for general help (e.g. "please help" or "give me a hint"), kindly ask them which specific question or concept they need help with. Do not blindly say "Not found in materials".
+- When the user refers to a specific question number (e.g. "Q.6", "question 4", "problem 3"), ALWAYS look through the Context below to find that question and provide relevant hints based on it. Do NOT ask the user to restate the question — you already have the assignment document.
+- If the required context for a specific question is genuinely not found in the documents after searching, inform the user that the question was not found in the loaded assignment and ask them to paste the question text.
+- Only if the user asks something truly vague with no question number or topic (e.g. just "help me"), ask them which specific question or concept they need help with.
 
 Context:
 {context}

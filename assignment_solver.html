@@ -466,7 +466,7 @@ html, body {
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sb-head">
-        <div class="sb-kicker">Solver Agent</div>
+        <div class="sb-kicker">Helper Agent</div>
         <div class="sb-head-row">
           <div class="sb-icon">
             <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
@@ -557,7 +557,7 @@ html, body {
 
 <script>
 /* ── API CONFIG — unchanged from original ── */
-const BASE_URL        = "http://127.0.0.1:8000";
+const BASE_URL        = "";
 const ASSIGNMENTS_API = BASE_URL + "/proxy/assignments";
 const MATERIAL_API    = BASE_URL + "/proxy/materials";
 
@@ -687,7 +687,7 @@ async function askAI() {
   const thinkId = "think-" + Date.now();
   chatContainer.innerHTML += `
     <div class="chat-msg agent" id="${thinkId}">
-      <div class="bubble-hdr">Solver Agent</div>
+      <div class="bubble-hdr">Helper Agent</div>
       <div class="bubble thinking-wrap" style="padding: 10px 16px;">
         <div class="thinking-dots"><span></span><span></span><span></span></div>
       </div>
@@ -711,7 +711,7 @@ async function askAI() {
 
     chatContainer.innerHTML += `
       <div class="chat-msg agent">
-        <div class="bubble-hdr">Solver Agent</div>
+        <div class="bubble-hdr">Helper Agent</div>
         <div class="bubble">${marked.parse(data.answer)}</div>
       </div>
     `;
@@ -722,7 +722,7 @@ async function askAI() {
     document.getElementById(thinkId).remove();
     chatContainer.innerHTML += `
       <div class="chat-msg agent">
-        <div class="bubble-hdr">Solver Agent</div>
+        <div class="bubble-hdr">Helper Agent</div>
         <div class="bubble" style="color: #ff6b7a;">Error contacting AI server. Please try again.</div>
       </div>
     `;

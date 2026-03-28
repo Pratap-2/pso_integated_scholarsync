@@ -1,0 +1,50 @@
+# ── Virtual environments ──
+venv/
+.venv/
+env/
+myenv/
+
+# ── Git ──
+.git/
+.gitignore
+
+# ── IDE / Editor ──
+.vscode/
+.idea/
+.gemini/
+
+# ── Python cache ──
+__pycache__/
+*.pyc
+*.pyo
+
+# ── Docker itself ──
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# ── Logs & temp files ──
+*.log
+*.txt
+!requirements.txt
+
+# ── OS files ──
+.DS_Store
+Thumbs.db
+
+# ── Secrets (injected via env vars at runtime) ──
+.env
+
+# ── Test / scratch scripts ──
+test.py
+test_*.py
+fix_swarm.py
+clean_chars.py
+downloadtest.py
+setup_db.py
+reconstruct.py
+download_docs.py
+
+# ── Generated artifacts ──
+generated_pdfs/
+cache/
