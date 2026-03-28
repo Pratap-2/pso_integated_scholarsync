@@ -25,3 +25,20 @@ token.pickle
 service-account.json
 chatbot/service-account.json
 chatbot/mcp_server/service-account.json
+
+# Additional Python Virtual Environments
+venv/
+.venv/
+env/
+
+# Logs & Debugging Files
+*.log
+*.txt
+azure_findings.txt
+events_out.txt
+uv_log.txt
+
+# OS & IDEs
+.DS_Store
+.idea/
+.gemini/
