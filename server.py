@@ -132,6 +132,14 @@ def serve_sync_db():
 
 app.mount("/js", StaticFiles(directory="js"), name="js")
 
+@app.get("/logo.png")
+def serve_logo():
+    return FileResponse("logo.png", media_type="image/png")
+
+@app.get("/favicon.ico")
+def serve_favicon():
+    return FileResponse("logo.png", media_type="image/png")
+
 # ---------------------------
 # Streaming chat endpoint
 # ---------------------------
