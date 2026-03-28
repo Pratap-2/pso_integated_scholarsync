@@ -225,25 +225,42 @@ def solve_assignment(question, history, assignment_url, material_urls):
     if not doc_keys:
         return "I could not read the document. The URL may be inaccessible or not a valid PDF."
 
-    # Retrieve relevant chunks via vector search
-    context_chunks = _vector_search(question, doc_keys)
-    context = "\n\n".join(context_chunks)
-
     llm = AzureChatOpenAI(
         azure_deployment=os.getenv("DEPLOYMENT_NAME", "gpt-4o-mini"),
         temperature=0,
         api_version="2024-02-15-preview"
     )
 
-    system_prompt = """You are an expert academic assistant.
+    # Agent 1: Query Understanding
+    query_reformulation_prompt = f"""
+You are an expert search query reformulator.
+The user is asking a question about their assignment.
+Your task is to extract the core search keywords to find the relevant context in the PDF.
+Example 1: "give hint for question 4" -> "Question 4"
+Example 2: "how do I solve problem 2 about binary search?" -> "Problem 2 binary search"
 
-Use the provided study materials and assignment context to answer the question.
+User query: {question}
+Return ONLY the reformulated search query, without quotes.
+"""
+    search_query = llm.invoke(query_reformulation_prompt).content.strip()
+    print(f"[AssignmentHelper] Reformulated Query: {search_query}")
+
+    # Retrieve relevant chunks via vector search using the optimized query
+    context_chunks = _vector_search(search_query, doc_keys)
+    context = "\n\n".join(context_chunks)
+
+    system_prompt = """You are an Assignment Helper and academic mentor.
+
+Use the provided study materials and assignment context to guide the student.
 
 Rules:
-- Give clear structured answers
-- Show steps if solving problems
-- Use headings if needed
-- If answer not found say "Not found in materials"
+- NEVER provide direct solutions to assignment questions.
+- Provide hints, formulas, and conceptual explanations instead.
+- Guide the student step-by-step so they can solve it themselves.
+- Use headings if needed.
+- Be encouraging and supportive.
+- If the required context for a specific question is not found in the documents, gently inform them.
+- If the user just asks for general help (e.g. "please help" or "give me a hint"), kindly ask them which specific question or concept they need help with. Do not blindly say "Not found in materials".
 
 Context:
 {context}
@@ -295,16 +312,15 @@ def solve_entire_assignment(assignment_url, material_urls):
     )
 
     prompt = f"""
-You are a university academic assistant.
+You are an Assignment Helper and academic mentor.
 
-Solve the following assignment completely.
+Create a comprehensive Study Plan and Breakdown for the following assignment.
 
 Rules:
-- Solve each question clearly
-- Show steps if needed
-- Provide explanations
-- Structure answers properly
-- Only solve the assignment below
+- Do NOT provide direct solutions to any of the questions.
+- For each question, summarize the core concept required to solve it.
+- Provide high-level hints, study topics, or formulas the student should review.
+- Structure your response cleanly using headings and bullet points.
 
 ASSIGNMENT:
 

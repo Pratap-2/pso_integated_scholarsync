@@ -1,768 +1,580 @@
 """
 chatbot/swarm_agents.py
--------------------------------------------------------------------------------
-Swarm Pipeline Agents for ScholarSync's Hybrid Architecture.
+─────────────────────────────────────────────────────────────────────────────
+Full swarm pipeline — all nodes for both simple and complex paths.
 
-STRICT RULES (enforced here):
-   NO existing agents, prompts, or tools are modified.
-   Explorers NEVER execute tools - they only PROPOSE actions.
-   Execution Engine runs each unique action EXACTLY ONCE.
-   send_email / get_assignments_tool / get_materials_tool are once-only tools.
+SIMPLE PATH:
+  ComplexityAnalyzer → SimpleRetriever → ExecutorNode
+  → ExploiterNode → PresentationAgent → (Critic)
+
+COMPLEX PATH:
+  ComplexityAnalyzer → Planner(GPT-4o)
+  → ToolHeavyExplorer → MinimalExplorer → BalancedExplorer
+  → FitnessEvaluator → ExecutorNode
+  → ExploiterNode → PresentationAgent → (Critic)
+
+Key feature: pending_email / pending_interview_topic stored in state
+so confirmations ("yes, send it") bypass the LLM entirely.
 """
 
+import asyncio
 import json
 import re
-import hashlib
-from typing import Literal, List
+from typing import Any
 
-from pydantic import BaseModel, Field
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
-# -- LLM instances (imported, NOT re-configured) -------------------------------
-from chatbot.llm import llm, tool_llm
-
-# -- Tool imports --------------------------------------------------------------
-from chatbot.mcp_client import get_mcp_tools
-from chatbot.tools_integration import (
-    solve_assignment_tool,
-    get_exams_tool,
-    get_interview_info_tool,
-    prepare_interview_session_tool,
-    open_interview_in_browser_tool,
+from chatbot.llm import llm_mini_1, llm_mini_2, llm_4o
+from chatbot.raw_tools import TOOL_MAP, KNOWN_TOOL_NAMES, CONFIRMATION_TOOLS, ONCE_ONLY_TOOLS
+from chatbot.prompts import (
+    COMPLEXITY_ANALYZER_SYSTEM,
+    SIMPLE_RETRIEVER_SYSTEM,
+    PLANNER_SYSTEM,
+    EXPLORER_TOOL_HEAVY_SYSTEM,
+    EXPLORER_MINIMAL_SYSTEM,
+    EXPLORER_BALANCED_SYSTEM,
+    FITNESS_EVALUATOR_SYSTEM,
+    EXPLOITER_SYSTEM,
+    PRESENTATION_AGENT_SYSTEM,
 )
 
 
-# 
-# TOOL REGISTRY (Execution Engine uses this)
-# 
+# ─────────────────────────────────────────────────────────────────────────────
+# HELPERS
+# ─────────────────────────────────────────────────────────────────────────────
 
-_base_tools = get_mcp_tools()
-_extra_tools = [
-    solve_assignment_tool,
-    get_exams_tool,
-    get_interview_info_tool,
-    prepare_interview_session_tool,
-    open_interview_in_browser_tool,
-]
-_base_names  = {t.name for t in _base_tools}
-
-ALL_SWARM_TOOLS: list = _base_tools + [t for t in _extra_tools if t.name not in _base_names]
-TOOL_MAP:        dict = {t.name: t for t in ALL_SWARM_TOOLS}
-KNOWN_TOOL_NAMES: set = set(TOOL_MAP.keys())
-
-# Tools that must NEVER execute more than once per user turn
-_ONCE_ONLY_TOOLS: set = {"send_email", "get_assignments_tool", "get_materials_tool", "open_interview_in_browser_tool"}
-
-
-# 
-# PYDANTIC SCHEMAS
-# 
-
-class ComplexityResult(BaseModel):
-    complexity:       Literal["simple", "complex"]
-    estimated_tools:  int = Field(ge=0)
-    reason:           str
-
-
-class ProposedAction(BaseModel):
-    tool:       str
-    parameters: dict = Field(default_factory=dict)
-
-
-class ExplorerOutput(BaseModel):
-    approach:         str
-    response:         str
-    proposed_actions: List[ProposedAction] = Field(default_factory=list)
-    confidence:       float = Field(ge=0.0, le=1.0)
-
-
-class CandidateEvaluation(BaseModel):
-    candidate_index:         int
-    tool_usage_correctness:  float
-    correctness:             float
-    completeness:            float
-    relevance:               float
-    clarity:                 float
-    fitness_score:           float
-
-
-class FitnessResult(BaseModel):
-    evaluations:          List[CandidateEvaluation]
-    best_candidate_index: int
-
-
-# 
-# HELPER
-# 
-
-def _get_last_user_query(state) -> str:
-    """Return the most recent HumanMessage content from the graph state."""
-    for m in reversed(state["messages"]):
+def _last_human(state: dict) -> str:
+    for m in reversed(state.get("messages", [])):
         if getattr(m, "type", "") == "human":
-            return m.content
+            return m.content or ""
     return ""
 
 
-def _parse_json_response(content: str) -> dict:
-    """
-    Robustly extract and parse the first JSON object in the LLM response.
-    Handles: markdown fences, preamble text, trailing prose.
-    Raises json.JSONDecodeError when no valid JSON is found.
-    """
-    content = content.strip()
+# ── Email masking (prevents Azure content-filter on raw email addresses) ───────
 
-    # 1. Strip ```json ... ``` or ``` ... ``` fences
-    fence_match = re.search(r"```(?:json)?\s*([\s\S]*?)```", content)
-    if fence_match:
-        content = fence_match.group(1).strip()
+_EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
 
-    # 2. Fast path: content might be a clean JSON object already
+
+def _mask_emails(text: str) -> tuple[str, dict[str, str]]:
+    """Replace every email address in text with __EMAIL_N__ placeholder.
+    Returns (masked_text, {placeholder: original_email})."""
+    mapping: dict[str, str] = {}
+    counter = 0
+
+    def replacer(m: re.Match) -> str:
+        nonlocal counter
+        email = m.group(0)
+        # reuse same placeholder if we've seen this address before
+        for k, v in mapping.items():
+            if v == email:
+                return k
+        placeholder = f"__EMAIL_{counter}__"
+        mapping[placeholder] = email
+        counter += 1
+        return placeholder
+
+    masked = _EMAIL_RE.sub(replacer, text)
+    return masked, mapping
+
+
+def _unmask(text: str, mapping: dict[str, str]) -> str:
+    """Restore email placeholders back to real addresses."""
+    for placeholder, original in mapping.items():
+        text = text.replace(placeholder, original)
+    return text
+
+
+def _last_human_masked(state: dict) -> tuple[str, dict[str, str]]:
+    """Return (masked_query, email_mapping) for LLM-safe input."""
+    raw = _last_human(state)
+    return _mask_emails(raw)
+
+
+def _parse_json(text: str) -> dict:
+    """Robustly extract the first JSON object from an LLM response."""
+    text = text.strip()
+    m = re.search(r"```(?:json)?\s*([\s\S]*?)```", text)
+    if m:
+        text = m.group(1).strip()
     try:
-        return json.loads(content)
+        return json.loads(text)
     except json.JSONDecodeError:
         pass
-
-    # 3. Fallback: find the first outermost {...} block via brace matching
-    start = content.find("{")
+    start = text.find("{")
     if start == -1:
-        raise json.JSONDecodeError("No JSON object found", content, 0)
-
+        return {}
     depth = 0
-    for i, ch in enumerate(content[start:], start=start):
+    for i, ch in enumerate(text[start:], start):
         if ch == "{":
             depth += 1
         elif ch == "}":
             depth -= 1
             if depth == 0:
-                return json.loads(content[start : i + 1])
+                try:
+                    return json.loads(text[start: i + 1])
+                except Exception:
+                    return {}
+    return {}
 
-    raise json.JSONDecodeError("Unmatched braces in JSON", content, start)
+
+async def _llm_call(llm, system: str, human: str) -> str:
+    res = await llm.ainvoke([SystemMessage(content=system),
+                              HumanMessage(content=human)])
+    return res.content or ""
 
 
-# 
-# 1. COMPLEXITY ANALYZER AGENT
-# 
+async def _call_tool(tool_name: str, params: dict) -> Any:
+    fn = TOOL_MAP.get(tool_name)
+    if fn is None:
+        return {"error": f"Unknown tool: {tool_name}"}
+    try:
+        if asyncio.iscoroutinefunction(fn):
+            return await fn(**params)
+        return await asyncio.to_thread(fn, **params)
+    except Exception as e:
+        return {"error": str(e)}
 
-_COMPLEXITY_SYSTEM = """You are the Query Complexity Analyzer for ScholarSync.
 
-Classify the user query into EXACTLY "simple" or "complex".
+def _result_to_str(result: Any) -> str:
+    if isinstance(result, (dict, list)):
+        return json.dumps(result, indent=2)
+    return str(result)
 
-CLASSIFY AS "complex" when the query:
-   Requires 2 or more distinct tools (e.g. fetch assignments AND send email)
-   Involves multi-step reasoning across different domains
-   Chains operations where output of one step feeds the next
-   Combines calendar + academic + communication actions
 
-CLASSIFY AS "simple" when the query:
-   Requires only 0 or 1 tool
-   Is a greeting, general chit-chat, or single-domain question
-   Can be fully handled by one specialized agent in one step
+# ── Confirmation detection ─────────────────────────────────────────────────
+_CONFIRM_PHRASES = {
+    "yes", "send", "send it", "yes send it", "go ahead", "ok", "okay",
+    "confirm", "proceed", "sure", "yep", "yeah", "do it", "go", "approved",
+}
 
-Available tool categories: calendar CRUD, email, calculator, web search,
-assignments, materials, marks, deadlines, exams, assignment-solver,
-interview practice (get_interview_info_tool, schedule_interview_tool).
+def _is_confirmation(query: str) -> bool:
+    q = query.lower().strip().strip('"\',.!')
+    return any(phrase in q for phrase in _CONFIRM_PHRASES)
 
-Reply with ONLY valid JSON -- no extra text:
-{
-  "complexity": "simple" | "complex",
-  "estimated_tools": <integer  0>,
-  "reason": "<brief explanation>"
-}"""
 
+def _parse_email_draft(text: str) -> dict:
+    """
+    Extract {to, subject, body} from the line-based ===EMAIL_DRAFT=== block.
+
+    Expected format (no JSON — just plain text fields):
+        ===EMAIL_DRAFT===
+        TO: recipient@example.com
+        SUBJECT: Subject line
+        BODY:
+        Full body text here
+        (can span multiple lines)
+        ===END_EMAIL_DRAFT===
+    """
+    m = re.search(
+        r"===EMAIL_DRAFT===\s*([\s\S]*?)\s*===END_EMAIL_DRAFT===",
+        text, re.IGNORECASE
+    )
+    if m:
+        block = m.group(1).strip()
+
+        to_m      = re.search(r"^TO:\s*(.+)$",      block, re.MULTILINE | re.IGNORECASE)
+        subject_m = re.search(r"^SUBJECT:\s*(.+)$", block, re.MULTILINE | re.IGNORECASE)
+        # Body is everything after the BODY: line
+        body_m    = re.search(r"^BODY:\s*\n([\s\S]+)$", block, re.MULTILINE | re.IGNORECASE)
+
+        if to_m and subject_m and body_m:
+            return {
+                "to":      to_m.group(1).strip(),
+                "subject": subject_m.group(1).strip(),
+                "body":    body_m.group(1).strip(),
+            }
+
+        # Fallback: maybe LLM forgot BODY: header — grab everything after SUBJECT: line
+        if to_m and subject_m:
+            subject_end = subject_m.end()
+            leftover = block[subject_end:].strip()
+            if leftover:
+                return {
+                    "to":      to_m.group(1).strip(),
+                    "subject": subject_m.group(1).strip(),
+                    "body":    leftover,
+                }
+
+    return {}
+
+
+def _parse_interview_ready(text: str) -> str:
+    """Extract topic from 'INTERVIEW READY: topic=X | ...'"""
+    m = re.search(r"INTERVIEW READY:\s*topic=([^|\n]+)", text, re.IGNORECASE)
+    return m.group(1).strip() if m else ""
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. COMPLEXITY ANALYZER  (llm_mini_1)
+# ─────────────────────────────────────────────────────────────────────────────
 
 async def complexity_analyzer_node(state: dict) -> dict:
-    """
-    Complexity Analyzer Node.
-    Classifies the user query and resets per-turn swarm state.
-    """
-    query = _get_last_user_query(state)
-    messages = [
-        SystemMessage(content=_COMPLEXITY_SYSTEM),
-        HumanMessage(content=f"User query: {query}"),
-    ]
+    query         = _last_human(state)
+    pending_email = state.get("pending_email") or {}
+    pending_iv    = state.get("pending_interview_topic") or ""
 
-    res = await llm.ainvoke(messages)
+    base_reset = {
+        "simple_tool_call":  {},
+        "execution_plan":    [],
+        "planner_goal":      "",
+        "planner_steps":     [],
+        "ui_requirement":    {"required": False, "type": "none"},
+        "explorer_outputs":  [],
+        "execution_results": [],
+        "exploiter_text":    "",
+        "final_response":    "",
+        "critic_iterations": 0,
+        "critic_feedback":   "",
+    }
 
-    try:
-        parsed = ComplexityResult(**_parse_json_response(res.content))
-        complexity = parsed.complexity
-        reason     = parsed.reason
-    except Exception:
-        # Safe fallback: route through existing simple pipeline unchanged
+    # ── Bypass LLM for confirmation turns ─────────────────────────────────────
+    if _is_confirmation(query) and (pending_email or pending_iv):
+        return {
+            "complexity":        "simple",
+            "complexity_reason": "Confirmation of pending action — LLM bypassed",
+            **base_reset,
+            # Keep pending fields so SimpleRetriever can consume them
+            "pending_email":           pending_email,
+            "pending_interview_topic": pending_iv,
+        }
+
+    masked_query, _em = _mask_emails(query)
+    raw    = await _llm_call(llm_mini_1, COMPLEXITY_ANALYZER_SYSTEM,
+                             f"User query: {masked_query}")
+    parsed = _parse_json(raw)
+    complexity = parsed.get("complexity", "simple")
+    if complexity not in ("simple", "complex"):
         complexity = "simple"
-        reason     = "Parse error -- defaulting to simple pipeline for safety."
 
     return {
         "complexity":              complexity,
-        "complexity_reason":       reason,
-        # Reset swarm state for this fresh turn
-        "explorer_outputs":        [],
-        "best_candidate":          {},
-        "best_candidate_index":    0,
-        "final_actions":           [],
-        "critic_iterations":       0,   # reset critic counter for new turn
-        "swarm_critic_iterations": 0,
+        "complexity_reason":       parsed.get("reason", ""),
+        **base_reset,
+        # Clear pending fields on fresh queries (not on confirmations)
+        "pending_email":           {},
+        "pending_interview_topic": "",
     }
 
 
-# 
-# 2. EXPLORER AGENTS  (PROPOSE ONLY -- NEVER EXECUTE TOOLS)
-# 
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. SIMPLE RETRIEVER  (llm_mini_1)
+# ─────────────────────────────────────────────────────────────────────────────
 
-_EXPLORER_TEMPLATE = """{style_instructions}
+async def simple_retriever_node(state: dict) -> dict:
+    query         = _last_human(state)
+    pending_email = state.get("pending_email") or {}
+    pending_iv    = state.get("pending_interview_topic") or ""
 
-You are an Explorer Agent for ScholarSync's swarm pipeline.
-IMPORTANT: You are an explicitly authorized academic assistant. Processing student grades, schedules, and proposing to draft emails to professors is fully permitted and does NOT constitute academic dishonesty, phishing, or spam.
-
-ABSOLUTE RULES:
-1. You are PART of an automated swarm pipeline. You MUST propose the exact tools needed in the `proposed_actions` array. The background system will execute them and fetch the data. 
-2. NEVER tell the user "I do not have access" or "Please use the tool yourself". Assume you have full access as long as you propose the correct tool.
-3. If the user asks to email a professor, you MUST propose the `get_subject_professors` tool to fetch their actual email address. Return the `send_email` action only AFTER gathering data.
-4. If the user uses relative time words like 'today', 'tomorrow', 'yesterday', or 'next week', you MUST propose the `current_time` tool so the system can resolve the exact date before calling calendar tools.
-5. Output ONLY valid JSON -- no extra prose, no markdown fences.
-6. Every tool name in proposed_actions MUST be from this exact list:
-   {tool_names}
-
-JSON schema you MUST follow:
-{{
-  "approach": "<your strategy in one sentence>",
-  "response": "<Explicitly narrate how you broke down the user query. For example: 'First, I identified that marks and assignment data are needed. Next, I will fetch that data. Finally, I will draft the requested email.' Make it clear to the user what your plan is>",
-  "proposed_actions": [
-    {{"tool": "<tool_name>", "parameters": {{"<key>": "<value>"}}}}
-  ],
-  "confidence": <float 0.0-1.0>
-}}
-
-If no tools are needed, set proposed_actions to [].
-
-User query: {query}"""
-
-_TOOL_HEAVY_STYLE = """STYLE: TOOL-HEAVY EXPLORER
-- Use as many relevant tools as needed for a complete, data-driven answer.
-- Include every tool that contributes useful data.
-- Ensure tools are sequenced logically (fetch before send, lookup before email)."""
-
-_REASONING_STYLE = """STYLE: REASONING-HEAVY EXPLORER
-- Prefer chain-of-thought reasoning and use tools only where strictly necessary.
-- Minimize tool calls. Maximise in-context reasoning.
-- Be thorough and analytical in your response text."""
-
-_CONCISE_STYLE = """STYLE: CONCISE EXPLORER
-- Find the simplest, shortest valid path to answer the query.
-- Use the minimum number of tools required -- remove anything optional.
-- Keep the response text brief and direct."""
-
-
-def mask_emails(text: str) -> tuple[str, dict]:
-    """Mask email addresses to bypass Azure OpenAI PII/Spam filters."""
-    mapping = {}
-    def repl(m):
-        key = f"__EMAIL_{len(mapping)}__"
-        mapping[key] = m.group(0)
-        return key
-    masked = re.sub(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', repl, text)
-    return masked, mapping
-
-def unmask_emails(text: str, mapping: dict) -> str:
-    for k, v in mapping.items():
-        text = text.replace(k, v)
-    return text
-
-def unmask_data(data, mapping: dict):
-    if isinstance(data, dict):
-        return {k: unmask_data(v, mapping) for k, v in data.items()}
-    elif isinstance(data, list):
-        return [unmask_data(x, mapping) for x in data]
-    elif isinstance(data, str):
-        return unmask_emails(data, mapping)
-    return data
-
-async def _run_explorer(state: dict, style: str, name: str) -> dict:
-    """Shared inner runner for all three explorers."""
-    query      = _get_last_user_query(state)
-    tool_names = ", ".join(sorted(KNOWN_TOOL_NAMES))
-
-    masked_query, email_mapping = mask_emails(query)
-
-    prompt = _EXPLORER_TEMPLATE.format(
-        style_instructions=style,
-        tool_names=tool_names,
-        query=masked_query,
-    )
-    messages = [
-        SystemMessage(content=prompt),
-        HumanMessage(content=f"Query to process: {masked_query}"),
-    ]
-    res = await tool_llm.ainvoke(messages)
-
-    try:
-        parsed = _parse_json_response(res.content)
-        # Only keep actions that reference real tools
-        valid_actions = [
-            a for a in parsed.get("proposed_actions", [])
-            if isinstance(a, dict) and a.get("tool") in KNOWN_TOOL_NAMES
-        ]
-        
-        # Unmask the generated actions so execution engine gets the real emails
-        unmasked_actions = unmask_data(valid_actions, email_mapping)
-        
-        parsed["proposed_actions"] = unmasked_actions
-        parsed["approach"]   = unmask_emails(str(parsed.get("approach", name)), email_mapping)
-        parsed["response"]   = unmask_emails(str(parsed.get("response", res.content)), email_mapping)
-        parsed.setdefault("confidence",  0.5)
-        parsed["explorer_name"] = name
-        return parsed
-
-    except Exception as e:
+    # ── FAST PATH: pending email confirmation ─────────────────────────────────
+    if pending_email and _is_confirmation(query):
         return {
-            "approach":         f"{name} (parse error: {e})",
-            "response":         res.content,
-            "proposed_actions": [],
-            "confidence":       0.0,
-            "explorer_name":    name,
+            "simple_tool_call": {"tool": "send_email"},
+            "execution_plan": [{
+                "tool":                  "send_email",
+                "parameters":            pending_email,
+                "order":                 1,
+                "requires_confirmation": False,  # already confirmed by user
+                "use_output_as":         "send confirmation",
+            }],
+            "ui_requirement": {"required": False, "type": "none"},
+            "pending_email":  {},  # clear after consuming
         }
+
+    # ── FAST PATH: pending interview confirmation ─────────────────────────────
+    if pending_iv and _is_confirmation(query):
+        return {
+            "simple_tool_call": {"tool": "open_interview_in_browser"},
+            "execution_plan": [{
+                "tool":                  "open_interview_in_browser",
+                "parameters":            {"topic": pending_iv},
+                "order":                 1,
+                "requires_confirmation": False,
+                "use_output_as":         "open interview for user",
+            }],
+            "ui_requirement":          {"required": False, "type": "none"},
+            "pending_interview_topic": "",  # clear after consuming
+        }
+
+    # ── NORMAL PATH: ask LLM ─────────────────────────────────────────────────
+    history_lines = []
+    for m in state.get("messages", [])[-6:]:
+        role = getattr(m, "type", "")
+        masked_content, _ = _mask_emails(m.content or "")
+        history_lines.append(f"{role.upper()}: {masked_content}")
+    context = "\n".join(history_lines)
+
+    masked_query, em_map = _mask_emails(query)
+    raw    = await _llm_call(llm_mini_1, SIMPLE_RETRIEVER_SYSTEM,
+                              f"Conversation history:\n{context}\n\nLatest message: {masked_query}")
+    parsed = _parse_json(raw)
+
+    tool_name  = parsed.get("tool", "none")
+    parameters = parsed.get("parameters") or {}
+    ui_req     = parsed.get("ui_requirement", {"required": False, "type": "none"})
+
+    # Unmask any email placeholders that landed in parameters (e.g. send_email.to)
+    if em_map:
+        for k, v in parameters.items():
+            if isinstance(v, str):
+                parameters[k] = _unmask(v, em_map)
+
+    if tool_name not in KNOWN_TOOL_NAMES and tool_name != "none":
+        tool_name = "none"
+
+    execution_plan = [] if tool_name == "none" else [
+        {
+            "tool":                  tool_name,
+            "parameters":            parameters,
+            "order":                 1,
+            "requires_confirmation": tool_name in CONFIRMATION_TOOLS,
+            "use_output_as":         "primary result",
+        }
+    ]
+
+    return {
+        "simple_tool_call": parsed,
+        "execution_plan":   execution_plan,
+        "ui_requirement":   ui_req,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 3. PLANNER  (llm_4o — GPT-4o only)
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def planner_node(state: dict) -> dict:
+    query = _last_human(state)
+    masked_query, em_map = _mask_emails(query)
+    raw   = await _llm_call(llm_4o, PLANNER_SYSTEM,
+                             f"User query: {masked_query}")
+    parsed = _parse_json(raw)
+
+    steps  = parsed.get("steps", [])
+    ui_req = parsed.get("ui_requirement", {"required": False, "type": "none"})
+
+    # Unmask emails in any step parameters the planner may have extracted
+    for s in steps:
+        params = s.get("parameters") or {}
+        for k, v in params.items():
+            if isinstance(v, str) and em_map:
+                params[k] = _unmask(v, em_map)
+
+    clean_steps = [s for s in steps if s.get("tool") in KNOWN_TOOL_NAMES]
+
+    return {
+        "planner_goal":   parsed.get("goal", query),
+        "planner_steps":  clean_steps,
+        "ui_requirement": ui_req,
+    }
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 4. EXPLORER AGENTS  (llm_mini_2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def _run_explorer(state: dict, system_prompt: str, name: str) -> dict:
+    query         = _last_human(state)
+    planner_steps = state.get("planner_steps", [])
+    raw  = await _llm_call(
+        llm_mini_2, system_prompt,
+        f"User query: {query}\n\nPlanner steps:\n{json.dumps(planner_steps, indent=2)}"
+    )
+    parsed = _parse_json(raw)
+    plan   = parsed.get("execution_plan", [])
+    clean  = [s for s in plan if isinstance(s, dict) and s.get("tool") in KNOWN_TOOL_NAMES]
+    return {"plan": clean, "explorer": name}
 
 
 async def run_tool_heavy_explorer(state: dict) -> dict:
-    """
-    Tool-Heavy Explorer node.
-    First explorer to run -- also handles the retry case by resetting
-    the explorer_outputs list when the Critic has already iterated.
-    """
-    output = await _run_explorer(state, _TOOL_HEAVY_STYLE, "ToolHeavyExplorer")
-
-    # On a Critic retry (critic_iterations > 0), start a fresh exploration set
-    if state.get("critic_iterations", 0) > 0:
-        return {"explorer_outputs": [output]}
-
-    existing = list(state.get("explorer_outputs") or [])
-    return {"explorer_outputs": existing + [output]}
+    out      = await _run_explorer(state, EXPLORER_TOOL_HEAVY_SYSTEM, "ToolHeavy")
+    existing = list(state.get("explorer_outputs", []))
+    return {"explorer_outputs": existing + [out]}
 
 
-async def run_reasoning_heavy_explorer(state: dict) -> dict:
-    """Reasoning-Heavy Explorer node."""
-    output   = await _run_explorer(state, _REASONING_STYLE, "ReasoningHeavyExplorer")
-    existing = list(state.get("explorer_outputs") or [])
-    return {"explorer_outputs": existing + [output]}
+async def run_minimal_explorer(state: dict) -> dict:
+    out      = await _run_explorer(state, EXPLORER_MINIMAL_SYSTEM, "Minimal")
+    existing = list(state.get("explorer_outputs", []))
+    return {"explorer_outputs": existing + [out]}
 
 
-async def run_concise_explorer(state: dict) -> dict:
-    """Concise Explorer node."""
-    output   = await _run_explorer(state, _CONCISE_STYLE, "ConciseExplorer")
-    existing = list(state.get("explorer_outputs") or [])
-    return {"explorer_outputs": existing + [output]}
+async def run_balanced_explorer(state: dict) -> dict:
+    out      = await _run_explorer(state, EXPLORER_BALANCED_SYSTEM, "Balanced")
+    existing = list(state.get("explorer_outputs", []))
+    return {"explorer_outputs": existing + [out]}
 
 
-# 
-# 3. FITNESS EVALUATION AGENT
-# 
-
-_FITNESS_SYSTEM = """You are the Fitness Evaluation Agent for ScholarSync.
-
-Evaluate ALL explorer candidate responses and score them using this MANDATORY formula:
-
-  fitness = (0.35  tool_usage_correctness)
-          + (0.25  correctness)
-          + (0.20  completeness)
-          + (0.10  relevance)
-          + (0.10  clarity)
-
-TOOL USAGE EVALUATION CRITERIA (tool_usage_correctness -- highest weight):
-   Correct tools selected for the query
-   ALL required tools are included
-   NO unnecessary tools added
-   NO duplicate tools with identical parameters
-   Correct parameter values
-   Logical execution sequencing
-
-Score every dimension from 0.0 to 1.0.
-Compute fitness_score using the formula above (do NOT deviate from it).
-
-STRICT OUTPUT -- valid JSON only, no extra text:
-{
-  "evaluations": [
-    {
-      "candidate_index": 0,
-      "tool_usage_correctness": 0.0,
-      "correctness":            0.0,
-      "completeness":           0.0,
-      "relevance":              0.0,
-      "clarity":                0.0,
-      "fitness_score":          0.0
-    }
-  ],
-  "best_candidate_index": 0
-}
-
-User query: {query}
-
-Candidates:
-{candidates}"""
-
+# ─────────────────────────────────────────────────────────────────────────────
+# 5. FITNESS EVALUATOR  (llm_mini_2)
+# ─────────────────────────────────────────────────────────────────────────────
 
 async def fitness_evaluator_node(state: dict) -> dict:
-    """
-    Fitness Evaluator node.
-    Scores all explorer outputs and selects the best candidate.
-    Always succeeds -- falls back to confidence-based selection on any error.
-    """
-    explorer_outputs = state.get("explorer_outputs") or []
+    query   = _last_human(state)
+    outputs = state.get("explorer_outputs", [])
 
-    if not explorer_outputs:
-        return {"best_candidate": {}, "best_candidate_index": 0}
+    if not outputs:
+        return {"execution_plan": state.get("planner_steps", [])}
 
-    def _confidence_fallback():
-        """Pick highest-confidence explorer as backup."""
-        try:
-            best     = max(explorer_outputs, key=lambda x: float(x.get("confidence", 0)))
-            best_idx = explorer_outputs.index(best)
-        except Exception:
-            best     = explorer_outputs[0]
-            best_idx = 0
-        return {"best_candidate": best, "best_candidate_index": best_idx}
+    def _fallback():
+        best = max(outputs, key=lambda x: len(x.get("plan", [])), default=outputs[0])
+        return best.get("plan", [])
 
     try:
-        query = _get_last_user_query(state)
-
-        # Safely serialise explorer outputs -- strip any non-serialisable values
-        safe_outputs = []
-        for i, o in enumerate(explorer_outputs):
-            try:
-                entry = {"candidate_index": i}
-                for k, v in o.items():
-                    try:
-                        json.dumps(v)   # probe serialisability
-                        entry[k] = v
-                    except (TypeError, ValueError):
-                        entry[k] = str(v)
-                safe_outputs.append(entry)
-            except Exception:
-                safe_outputs.append({"candidate_index": i, "response": str(o), "confidence": 0.0})
-
-        candidates_json = json.dumps(safe_outputs, indent=2)
-
-        system_msg = _FITNESS_SYSTEM.format(query=query, candidates=candidates_json)
-        messages = [
-            SystemMessage(content=system_msg),
-            HumanMessage(content=f"Evaluate all {len(explorer_outputs)} candidates for the query: {query}"),
-        ]
-        res = await llm.ainvoke(messages)
-
-        parsed   = _parse_json_response(res.content)
-        best_idx = int(parsed.get("best_candidate_index", 0))
-        best_idx = max(0, min(best_idx, len(explorer_outputs) - 1))
-        return {
-            "best_candidate":       explorer_outputs[best_idx],
-            "best_candidate_index": best_idx,
-        }
-
+        raw    = await _llm_call(
+            llm_mini_2, FITNESS_EVALUATOR_SYSTEM,
+            f"User query: {query}\n\nPlans:\n{json.dumps(outputs, indent=2)}"
+        )
+        parsed = _parse_json(raw)
+        plan   = parsed.get("selected_plan", [])
+        plan   = [s for s in plan if s.get("tool") in KNOWN_TOOL_NAMES]
+        if not plan:
+            plan = _fallback()
     except Exception:
-        return _confidence_fallback()
+        plan = _fallback()
+
+    return {"execution_plan": plan}
 
 
-# 
-# 4. EXPLOITER AGENT
-# 
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. EXECUTOR NODE  (pure Python — NO LLM)
+# ─────────────────────────────────────────────────────────────────────────────
 
-_EXPLOITER_SYSTEM = """You are the Exploiter Agent for ScholarSync.
+async def executor_node(state: dict) -> dict:
+    plan     = state.get("execution_plan", [])
+    is_retry = (state.get("critic_iterations") or 0) > 0
 
-Your ONLY job: refine the provided candidate response using the specific instructions from the Critic.
-Do NOT change the underlying tool suggestions, ONLY fix the wording/style as requested.
-If there is no Critic feedback or it says APPROVE, just output the same response.
-"""
+    # On Critic retry, reuse cached results — no side-effects
+    if is_retry:
+        return {"execution_results": list(state.get("execution_results") or [])}
+
+    results: list     = []
+    once_called: set  = set()
+    sorted_plan       = sorted(plan, key=lambda s: s.get("order", 99))
+
+    for step in sorted_plan:
+        tool_name = step.get("tool", "")
+        params    = step.get("parameters") or {}
+        # If the step explicitly sets requires_confirmation use that value.
+        # Only fall back to CONFIRMATION_TOOLS when the key is absent.
+        # This lets the confirmation fast-path (requires_confirmation=False)
+        # override the default so send_email is actually executed after "yes send it".
+        requires_confirmation = step.get(
+            "requires_confirmation",
+            tool_name in CONFIRMATION_TOOLS   # default: require confirmation
+        )
+
+        if not tool_name or tool_name == "none":
+            continue
+
+        if requires_confirmation:
+            results.append({
+                "tool":          tool_name,
+                "skipped":       True,
+                "reason":        "requires_confirmation",
+                "parameters":    params,
+                "use_output_as": step.get("use_output_as", ""),
+            })
+            continue
+
+        if tool_name in ONCE_ONLY_TOOLS and tool_name in once_called:
+            continue
+
+        result = await _call_tool(tool_name, params)
+        results.append({
+            "tool":          tool_name,
+            "skipped":       False,
+            "result":        result,
+            "result_str":    _result_to_str(result),
+            "use_output_as": step.get("use_output_as", ""),
+        })
+
+        if tool_name in ONCE_ONLY_TOOLS:
+            once_called.add(tool_name)
+
+    return {"execution_results": results}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 7. EXPLOITER NODE  (llm_mini_2)
+# ─────────────────────────────────────────────────────────────────────────────
 
 async def exploiter_node(state: dict) -> dict:
-    """Exploiter node: refines winning text after Critic approval or final iteration."""
-    best = state.get("best_candidate", {})
-    feedback = state.get("critic_feedback", "")
-    response_text = best.get("response", "I processed your request.")
-    
-    if not feedback or "APPROVE" in feedback.upper():
-        return {"messages": [AIMessage(content=response_text)]}
-        
-    messages = [
-        SystemMessage(content=_EXPLOITER_SYSTEM),
-        HumanMessage(content=f"Original Response:\n{response_text}\n\nCritic Feedback:\n{feedback}")
-    ]
-    res = await llm.ainvoke(messages)
-    return {"messages": [AIMessage(content=res.content)]}
+    query           = _last_human(state)
+    results         = state.get("execution_results", [])
+    goal            = state.get("planner_goal", "") or query
+    critic_feedback = state.get("critic_feedback", "")
+    is_retry        = (state.get("critic_iterations") or 0) > 0
 
-
-# 
-# 5. ACTION PLANNER AGENT
-# 
-
-_PLANNER_SYSTEM = """You are the Action Planner for ScholarSync.
-
-Extract the tools needed for execution from the proposed actions.
-Output ONLY valid JSON:
-{
-  "final_actions": [
-    {"tool": "<name>", "parameters": {"<key>": "<val>"}}
-  ]
-}
-"""
-
-async def action_planner_node(state: dict) -> dict:
-    """Action Planner node: algorithmically sorts and segregates the list of tools to execute."""
-    best = state.get("best_candidate", {})
-    actions = best.get("proposed_actions", [])
-    valid_actions = [a for a in actions if a.get("tool") in KNOWN_TOOL_NAMES]
-    
-    # Priority mapping: lower number executes first
-    priority = {
-        "current_time": 0,
-        "get_subject_professors": 1,
-        "get_assignments_tool": 2,
-        "get_materials_tool": 3,
-        "get_marks_tool": 4,
-        "get_exams_tool": 5,
-        "get_deadlines_tool": 6,
-        "list_calendar_events": 7,
-        "calculator": 8,
-        "currency_converter": 9,
-        "get_weather": 10,
-        "web_search": 11,
-        "check_calendar_free": 12,
-        "create_calendar_event": 13,
-        "solve_assignment_tool": 14,
-        "get_interview_info_tool": 15,
-        "prepare_interview_session_tool": 16,
-        "open_interview_in_browser_tool": 97,
-        "send_email": 99,
-    }
-
-    # Topologically sort the actions
-    sorted_actions = sorted(
-        valid_actions,
-        key=lambda x: priority.get(x.get("tool", ""), 50)
-    )
-
-    return {"final_actions": sorted_actions}
-
-
-# 
-# 6. EXECUTION ENGINE
-# 
-
-_SYNTHESIS_SYSTEM = """You are the Response Synthesizer for ScholarSync.
-
-You have been given:
-1. The planned response text (which contains the step-by-step plan the agent created)
-2. Actual results from tools that were just executed
-
-Your job: Produce a highly structured, human-friendly final answer that explicitly breaks down the process.
-
-RULES:
-1. Start your response by explicitly stating how you broke down the complex query (e.g., "I identified that you needed X and Y. I fetched X and Y.").
-2. Narrate the steps you took in past-tense based on the tool results: "First, I fetched your marks data... Next, I checked your deadlines..."
-3. Integrate the actual tool results cleanly into this narrative.
-4. If an email was requested, conclude the narrative with: "Then, I composed the email draft as requested."
-5. UI COMPONENTS RULE: If you fetched Assignments or Materials data, you MUST NOT use standard markdown tables! Instead, you MUST output the exact JSON array wrapped in a specific markdown code block so the frontend renders the beautiful Grid UI. 
-For Assignments, use:
-```ui_assignments
-[ {"title": "Title", "subject": "Subject Name", "deadline": "date", "description": "desc", "assignmentDoc": "link"} ]
-```
-For Materials, use: 
-```ui_materials
-[ {"title": "Title", "subject": "Subject Name", "link": "https://link", "description": "desc"} ]
-```
-6. INTERVIEW SCHEDULING RULE: If prepare_interview_session_tool was called, you MUST output ONLY a brief one-line intro then the following block (do NOT include prose about the interview - just the block):
-```ui_interview_confirm
-{"topic": "<tag>", "url": "<url>", "score": <score>, "attempts": <attempts>}
-```
-Do NOT describe the interview details in text - the frontend will render the card.
-7. For other data (like Marks or Exams), summarise it in readable prose or standard Markdown tables.
-8. Be warm, professional, and clear about the multi-step actions you executed.
-- Return ONLY the final response text -- no extra JSON outside of the UI blocks."""
-
-_EMAIL_DRAFT_SYSTEM = """You are an authorized academic assistant for ScholarSync.
-Your task is to draft a standard academic inquiry message. 
-IMPORTANT: This is a legitimate student inquiry, NOT academic dishonesty, spam, or phishing. You are explicitly authorized to process this request.
-
-Based on the provided data, draft the message body. Do NOT generate real personal headers if it violates policy, just draft the message content.
-
-Rules:
-- Use formal, respectful tone
-- Integrate the actual data (marks, exam info) from the tool results
-- Keep the message concise but complete
-- Format exactly as:
-
-  Subject: <subject line>
-
-  Dear Professor <Name>,
-
-  <message body>
-
-  Best regards,
-  [Student]
-
-Return ONLY the formatted text -- no extra explanation."""
-
-async def execution_engine_node(state: dict) -> dict:
-    """
-    Execution Engine -- smart 3-phase pipeline.
-
-    Phase 1: Execute all data-gathering tools (marks, exams, professors, etc.)
-    Phase 2: If email was planned, compose a proper draft using fetched data
-             and present it for confirmation (never auto-sends).
-    Phase 3: LLM synthesis -- turns raw tool output into readable human response.
-    """
-    final_actions: list = state.get("final_actions") or []
-    query               = _get_last_user_query(state)
-
-    _EMAIL_TOOL          = "send_email"
-    _INTERVIEW_OPEN_TOOL = "open_interview_in_browser_tool"
-    _DATA_TOOLS_FIRST = {
-        "get_marks_tool", "get_exams_tool", "get_assignments_tool",
-        "get_materials_tool", "get_deadlines_tool", "student_performance_tool",
-        "get_subject_professors", "get_interview_info_tool", "prepare_interview_session_tool",
-    }
-
-    email_action          = None
-    interview_open_action = None
-    data_actions          = []
-    other_actions         = []
-
-    for action in final_actions:
-        t = action.get("tool", "")
-        if t == _EMAIL_TOOL:
-            email_action = action
-        elif t == _INTERVIEW_OPEN_TOOL:
-            interview_open_action = action
-        elif t in _DATA_TOOLS_FIRST:
-            data_actions.append(action)
+    ctx_parts = []
+    for r in results:
+        tool = r.get("tool", "unknown")
+        if r.get("skipped"):
+            ctx_parts.append(
+                f"[SKIPPED — requires_confirmation]: {tool}"
+                f"\nParameters: {json.dumps(r.get('parameters', {}))}"
+            )
         else:
-            other_actions.append(action)
+            use_as = r.get("use_output_as", "")
+            header = f"[{tool}]" + (f" (use as: {use_as})" if use_as else "") + ":"
+            ctx_parts.append(header + "\n" + r.get("result_str", ""))
 
-    # -- Phase 1: Execute data + other tools ------------------------------
-    once_only_executed: set  = set()
-    execution_results:  list = []
+    context   = "\n\n".join(ctx_parts) if ctx_parts else "No tool data available."
+    human_msg = f"Goal: {goal}\n\nTool Results:\n{context}\n\nUser query: {query}"
 
-    for action in (data_actions + other_actions):
-        tool_name = action.get("tool", "")
-        params    = action.get("parameters") or {}
+    if is_retry and critic_feedback:
+        human_msg += f"\n\nCritic feedback to address: {critic_feedback}"
 
-        if tool_name in _ONCE_ONLY_TOOLS and tool_name in once_only_executed:
-            continue
+    raw = await _llm_call(llm_mini_2, EXPLOITER_SYSTEM, human_msg)
 
-        tool_fn = TOOL_MAP.get(tool_name)
-        if tool_fn is None:
-            continue
+    # ── Parse pending confirmations from exploiter output ─────────────────────
+    updates: dict = {"exploiter_text": raw}
 
-        try:
-            result = await tool_fn.ainvoke(params) if params else await tool_fn.ainvoke({})
-            execution_results.append({"tool": tool_name, "result": str(result)})
-        except Exception as e:
-            execution_results.append({"tool": tool_name, "error": str(e)})
-
-        if tool_name in _ONCE_ONLY_TOOLS:
-            once_only_executed.add(tool_name)
-
-    results_context = ""
-    if execution_results:
-        results_context = "\n\n".join(
-            f"[{r['tool']}]:\n{r.get('result', 'Error: ' + r.get('error', 'unknown'))}"
-            for r in execution_results
-        )
-
-    # -- Locate the Exploiter's refined/planned text ------------------------
-    exploiter_response = ""
-    for m in reversed(state["messages"]):
-        if (
-            getattr(m, "type", "") == "ai"
-            and m.content
-            and "APPROVE"         not in m.content.upper()
-            and "CRITIC FEEDBACK" not in m.content
-        ):
-            exploiter_response = m.content
-            break
-
-    # -- Phase 2a: Compose email draft (NEVER auto-send) ------------------
-    email_draft_block = ""
-    if email_action:
-        try:
-            draft_prompt = (
-                f"User request: {query}\n\n"
-                f"Data fetched from tools:\n{results_context or 'No tool data available.'}\n\n"
-                "Compose a professional email to the relevant professor using this data."
-            )
-            draft_res = await llm.ainvoke([
-                SystemMessage(content=_EMAIL_DRAFT_SYSTEM),
-                HumanMessage(content=draft_prompt),
-            ])
-            email_draft_block = (
-                "\n\n---\n **Draft Email** *(please confirm before I send it)*:\n\n"
-                + draft_res.content
-                + "\n\n*Reply **\"yes, send it\"** to send, or tell me what to change.*"
-            )
-        except Exception as e:
-            email_draft_block = f"\n\n*(Could not compose email draft: {e})*"
-
-    # -- Phase 2b: Interview redirect confirmation block ------------------
-    interview_confirm_block = ""
-    if interview_open_action:
-        params = interview_open_action.get("parameters") or {}
-        topic  = params.get("topic", "")
-        tag    = topic.strip().lower().replace(" ", "_")
-        # Pull URL + perf from prepare_interview_session_tool result if available
-        url, score, attempts = "", 0, 0
-        sched_result = next(
-            (r.get("result", "") for r in execution_results if r.get("tool") == "prepare_interview_session_tool"),
+    new_pending_email = _parse_email_draft(raw)
+    if new_pending_email:
+        updates["pending_email"] = new_pending_email
+    else:
+        # Hard fallback: if LLM didn't follow the draft format, extract what we can
+        # from the skipped send_email's planned parameters + exploiter text as the body.
+        skipped_email = next(
+            (r for r in results if r.get("tool") == "send_email" and r.get("skipped")),
             None
         )
-        if sched_result:
-            try:
-                import json as _json
-                info     = _json.loads(sched_result)
-                url      = info.get("url", "")
-                score    = info.get("performance_score", 0)
-                attempts = info.get("attempts", 0)
-                tag      = info.get("topic", tag)
-            except Exception:
-                pass
-        if not url:
-            from chatbot.tools_integration import _interview_mapping, FRONTEND_BASE
-            item = _interview_mapping.get(tag, {})
-            ep   = item.get("endpoint_redirect", "")
-            url  = (FRONTEND_BASE.rstrip("/") + "/" + ep.lstrip("/")) if ep else ""
-            score    = item.get("performance_score", 0)
-            attempts = item.get("number_of_attempts", 0)
-        import json as _json2
-        interview_confirm_block = (
-            "\n\n"
-            "```ui_interview_confirm\n"
-            + _json2.dumps({"topic": tag, "url": url, "score": score, "attempts": attempts})
-            + "\n```"
-        )
+        if skipped_email:
+            params = skipped_email.get("parameters") or {}
+            to_addr = params.get("to", "")
+            subject  = params.get("subject", "") or "Information from ScholarSync"
+            # Use the exploiter's full text as the body (Presentation Agent will format it)
+            body = params.get("body", "") or raw.strip()
+            if to_addr:
+                updates["pending_email"] = {
+                    "to":      to_addr,
+                    "subject": subject,
+                    "body":    body,
+                }
 
-    # -- Phase 3: LLM synthesis -- readable response from tool results -------
-    final_response = exploiter_response or "I processed your request."
-    
-    try:
-        if execution_results and results_context:
-            synth_res = await llm.ainvoke([
-                SystemMessage(content=_SYNTHESIS_SYSTEM),
-                HumanMessage(
-                    content=(
-                        f"Planned response:\n{exploiter_response or query}\n\n"
-                        f"Tool results:\n{results_context}\n\n"
-                        f"User request: {query}"
-                    )
-                ),
-            ])
-            final_response = synth_res.content
-    except Exception as e:
-        # Fallback if synthesis fails
-        final_response += "\n\n*(Note: I successfully executed the actions, but encountered an error formatting the final summary. The data was processed successfully.)*"
+    new_pending_iv = _parse_interview_ready(raw)
+    if new_pending_iv:
+        updates["pending_interview_topic"] = new_pending_iv
 
-    if email_draft_block:
-        final_response += email_draft_block
+    return updates
 
-    if interview_confirm_block:
-        # If synthesis already emitted ui_interview_confirm (from the prompt rule)
-        # don't double-append. Only append if it's missing.
-        if "ui_interview_confirm" not in final_response:
-            final_response += interview_confirm_block
 
-    return {"messages": [AIMessage(content=final_response)]}
+# ─────────────────────────────────────────────────────────────────────────────
+# 8. PRESENTATION AGENT  (llm_mini_2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+async def presentation_agent_node(state: dict) -> dict:
+    query          = _last_human(state)
+    exploiter_text = state.get("exploiter_text", "")
+
+    if not exploiter_text:
+        exploiter_text = f"The user asked: {query}. No specific data was retrieved."
+
+    raw = await _llm_call(
+        llm_mini_2, PRESENTATION_AGENT_SYSTEM,
+        f"User query: {query}\n\nLogical synthesis to format:\n{exploiter_text}"
+    )
+
+    return {
+        "final_response": raw,
+        "messages":       [AIMessage(content=raw)],
+    }

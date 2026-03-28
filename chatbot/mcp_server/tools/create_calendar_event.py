@@ -58,6 +58,7 @@ def create_calendar_event(data):
 
         return {
             "status": "success",
+            "message": f"✅ Event '{title}' created successfully.",
             "event_id": event.get("id"),
             "event_url": event.get("htmlLink")
         }

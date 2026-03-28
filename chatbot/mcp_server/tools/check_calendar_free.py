@@ -12,29 +12,33 @@ def check_calendar_free(data):
 
     print("[MCP] check_calendar_free")
 
-    service = get_calendar_service()
+    try:
+        service = get_calendar_service()
 
-    start_dt = datetime.fromisoformat(start_time)
-    end_dt = datetime.fromisoformat(end_time)
+        start_dt = datetime.fromisoformat(start_time)
+        end_dt = datetime.fromisoformat(end_time)
 
-    if start_dt.tzinfo is None:
-        start_dt = IST.localize(start_dt)
+        if start_dt.tzinfo is None:
+            start_dt = IST.localize(start_dt)
 
-    if end_dt.tzinfo is None:
-        end_dt = IST.localize(end_dt)
+        if end_dt.tzinfo is None:
+            end_dt = IST.localize(end_dt)
 
-    body = {
-        "timeMin": start_dt.isoformat(),
-        "timeMax": end_dt.isoformat(),
-        "timeZone": "Asia/Kolkata",
-        "items": [{"id": "primary"}]
-    }
+        body = {
+            "timeMin": start_dt.isoformat(),
+            "timeMax": end_dt.isoformat(),
+            "timeZone": "Asia/Kolkata",
+            "items": [{"id": "primary"}]
+        }
 
-    result = service.freebusy().query(body=body).execute()
+        result = service.freebusy().query(body=body).execute()
 
-    busy = result["calendars"]["primary"]["busy"]
+        busy = result["calendars"]["primary"]["busy"]
 
-    if not busy:
-        return {"result": "You are free during this time."}
+        if not busy:
+            return {"result": "You are free during this time."}
 
-    return {"result": "You already have an event during this time."}
+        return {"result": "You already have an event during this time."}
+
+    except Exception as e:
+        return {"result": f"Calendar error: {str(e)}"}

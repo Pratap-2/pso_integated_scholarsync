@@ -9,6 +9,7 @@ from .tools.check_calendar_free import check_calendar_free
 from .tools.list_calendar_events import list_calendar_events
 from .tools.update_event_by_title import update_event_by_title
 from .tools.get_subject_professors import get_subject_professors
+from .tools.get_student_connections import get_student_connections
 app = FastAPI()
 
 
@@ -60,3 +61,9 @@ def update_event_title(data: dict):
 def run_get_subject_professors():
 
     return get_subject_professors()
+
+# -------- TOOL: GET STUDENT CONNECTIONS --------
+@app.post("/tools/get_student_connections")
+def run_get_student_connections():
+
+    return get_student_connections()
