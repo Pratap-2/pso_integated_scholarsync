@@ -3,7 +3,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from ..config import GMAIL_APP_PASSWORD
 
-GMAIL_SENDER = "scholarsync26@gmail.com"
+GMAIL_SENDER = "syncscholar079@gmail.com"
 
 def send_email(data):
 

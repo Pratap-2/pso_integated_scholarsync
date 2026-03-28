@@ -627,7 +627,11 @@
     }
 
     .or4::before {
-      display: none;
+      background: var(--mint);
+      box-shadow: 0 0 8px var(--mint);
+      width: 4px;
+      height: 4px;
+      top: -2px;
     }
 
     .hero-btns {
@@ -850,7 +854,22 @@
       padding: 96px 56px;
     }
 
-    .agents-flow {
+
+    .agents-flow-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      max-width: 1080px;
+      margin: 0 auto 48px;
+    }
+
+    @media (max-width: 900px) {
+      .agents-flow-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    \n .agents-flow {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -958,6 +977,24 @@
     .anode-3 .an-orb-ring::before {
       background: var(--mint);
       box-shadow: 0 0 10px var(--mint);
+    }
+
+    .anode-4 .an-orb-ring { animation-delay: 1.5s; }
+    .anode-4 .an-orb-ring::before {
+      background: #e879f9;
+      box-shadow: 0 0 10px #e879f9;
+    }
+
+    .anode-5 .an-orb-ring { animation-delay: 2s; }
+    .anode-5 .an-orb-ring::before {
+      background: #fbbf24;
+      box-shadow: 0 0 10px #fbbf24;
+    }
+
+    .anode-6 .an-orb-ring { animation-delay: 2.5s; }
+    .anode-6 .an-orb-ring::before {
+      background: #f472b6;
+      box-shadow: 0 0 10px #f472b6;
     }
 
     .an-name {
@@ -3262,7 +3299,6 @@
         <div class="orb-ring or1"></div>
         <div class="orb-ring or2"></div>
         <div class="orb-ring or3"></div>
-        <div class="orb-ring or4"></div>
       </div>
       <div class="hero-kicker">3-Agent Cooperative Intelligence · MS Hackathon 2025</div>
       <h1 class="hero-title">
@@ -3276,18 +3312,84 @@
           onclick="document.getElementById('sec-features').scrollIntoView({behavior:'smooth'})">Explore
           Capabilities</button>
       </div>
-      <div class="hero-stats">
-        <div style="text-align:center">
-          <div class="hstat-n">3</div>
-          <div class="hstat-l">Autonomous Agents</div>
+
+    </section>
+
+    <div class="l-divider"></div>
+
+    <!-- Three Agents -->
+    <section class="agents-section" id="sec-agents">
+      <div class="sec-kicker">Multi-Agent Architecture</div>
+      <h2 class="sec-title">Six agents. One unified system.</h2>
+      <p class="sec-sub">Each agent operates autonomously within its domain, then shares context with the others —
+        forming a cooperative pipeline that handles complex tasks end-to-end.</p>
+
+      <div class="agents-flow-grid">
+        <div class="agent-node anode-1">
+          <div class="an-num" style="color:var(--azure-l); font-weight:bold; opacity:1;">01 / PLANNER</div>
+          <div class="an-orb">
+            <div class="an-orb-core" style="background:var(--azure-l); box-shadow:0 0 20px var(--azure-l);"></div>
+            <div class="an-orb-ring" style="border-color:rgba(106,160,255,0.5);"></div>
+          </div>
+          <div class="an-name" style="color:var(--azure-l);">Planner Agent</div>
+          <div class="an-role" style="color:#a8c1de;">Strategic Planning · Orchestration</div>
+          <p class="an-desc" style="color:rgba(255,255,255,0.95);">Breaks down user queries into structured steps,
+            identifies required tools, and determines execution order without executing actions.</p>
         </div>
-        <div style="text-align:center">
-          <div class="hstat-n">6</div>
-          <div class="hstat-l">Agent Capabilities</div>
+        <div class="agent-node anode-2">
+          <div class="an-num" style="color:#00e5ff; font-weight:bold; opacity:1;">02 / EXPLORER</div>
+          <div class="an-orb">
+            <div class="an-orb-core" style="background:var(--electric); box-shadow:0 0 20px var(--electric);"></div>
+            <div class="an-orb-ring" style="border-color:rgba(0,207,255,0.5);"></div>
+          </div>
+          <div class="an-name" style="color:var(--electric);">Explorer Agent</div>
+          <div class="an-role" style="color:#a8c1de;">Parallel Strategies · Exploration</div>
+          <p class="an-desc" style="color:rgba(255,255,255,0.95);">Generates multiple alternative strategies
+            simultaneously (Exhaustive, Minimal, Adaptive) to explore diverse solution spaces.</p>
         </div>
-        <div style="text-align:center">
-          <div class="hstat-n">∞</div>
-          <div class="hstat-l">Automated Tasks</div>
+        <div class="agent-node anode-3">
+          <div class="an-num" style="color:var(--mint); font-weight:bold; opacity:1;">03 / RETRIEVER</div>
+          <div class="an-orb">
+            <div class="an-orb-core" style="background:var(--mint); box-shadow:0 0 20px var(--mint);"></div>
+            <div class="an-orb-ring" style="border-color:rgba(0,229,160,0.5);"></div>
+          </div>
+          <div class="an-name" style="color:var(--mint);">Retriever Agent</div>
+          <div class="an-role" style="color:#a8c1de;">Information Retrieval · RAG</div>
+          <p class="an-desc" style="color:rgba(255,255,255,0.95);">Performs semantic search over documents and surfaces
+            relevant information, handling specific data fetch requests.</p>
+        </div>
+        <div class="agent-node anode-4">
+          <div class="an-num" style="color:#f0abfc; font-weight:bold; opacity:1;">04 / EXPLOITER</div>
+          <div class="an-orb">
+            <div class="an-orb-core" style="background:#e879f9; box-shadow: 0 0 20px #e879f9;"></div>
+            <div class="an-orb-ring" style="border-color:rgba(232,121,249,0.5);"></div>
+          </div>
+          <div class="an-name" style="color:#f0abfc;">Exploiter Agent</div>
+          <div class="an-role" style="color:#a8c1de;">Insight Synthesis · Integration</div>
+          <p class="an-desc" style="color:rgba(255,255,255,0.95);">Combines raw, fragmented tool outputs to extract
+            meaningful insights and ensure logical consistency without hallucination.</p>
+        </div>
+        <div class="agent-node anode-5">
+          <div class="an-num" style="color:#fcd34d; font-weight:bold; opacity:1;">05 / CRITIC</div>
+          <div class="an-orb">
+            <div class="an-orb-core" style="background:#fbbf24; box-shadow: 0 0 20px #fbbf24;"></div>
+            <div class="an-orb-ring" style="border-color:rgba(251,191,36,0.5);"></div>
+          </div>
+          <div class="an-name" style="color:#fcd34d;">Critic Agent</div>
+          <div class="an-role" style="color:#a8c1de;">Validation · Evaluation</div>
+          <p class="an-desc" style="color:rgba(255,255,255,0.95);">Evaluates candidate strategies from the Explorer
+            prior to execution, scoring them based on correctness, efficiency, and logic.</p>
+        </div>
+        <div class="agent-node anode-6">
+          <div class="an-num" style="color:#f9a8d4; font-weight:bold; opacity:1;">06 / EXECUTOR</div>
+          <div class="an-orb">
+            <div class="an-orb-core" style="background:#f472b6; box-shadow: 0 0 20px #f472b6;"></div>
+            <div class="an-orb-ring" style="border-color:rgba(244,114,182,0.5);"></div>
+          </div>
+          <div class="an-name" style="color:#f9a8d4;">Executor Agent</div>
+          <div class="an-role" style="color:#a8c1de;">Deterministic Action · APIs</div>
+          <p class="an-desc" style="color:rgba(255,255,255,0.95);">Strictly executes selected plans through the MCP
+            Server, performing definitive tool calls (e.g., email, calendar).</p>
         </div>
       </div>
     </section>
@@ -3297,111 +3399,43 @@
     <!-- Features -->
     <section class="l-section" id="sec-features">
       <div class="sec-kicker">Capabilities</div>
-      <h2 class="sec-title">Six specialized agent modules.</h2>
-      <p class="sec-sub">Each module is engineered to handle a distinct domain of your academic workflow — operating
-        independently and cooperatively in real time.</p>
+      <h2 class="sec-title">Six specialized core capabilities.</h2>
+      <p class="sec-sub">Each capability is engineered to handle a distinct domain of your academic workflow — operating
+        seamlessly in real time.</p>
       <div class="feat-grid">
         <div class="feat-card fc-a">
           <div class="feat-ico" style="background:rgba(16,96,240,.1);">📅</div>
-          <div class="feat-name">Deadline Monitoring Agent</div>
-          <p class="feat-desc">Automatically tracks academic deadlines and alerts students before critical submissions
-            are due.</p>
+          <div class="feat-name">Calendar & Email Sync</div>
+          <p class="feat-desc">Seamlessly manage Google Calendar events and dispatch formatted emails to professors or peers directly from chat.</p>
         </div>
         <div class="feat-card fc-b">
           <div class="feat-ico" style="background:rgba(0,207,255,.1);">🧩</div>
-          <div class="feat-name">Assignment Solution Agent</div>
+          <div class="feat-name">Assignment Helper</div>
           <p class="feat-desc">Analyzes assignment questions and generates structured, step-by-step intelligent answers.
           </p>
         </div>
         <div class="feat-card fc-c">
-          <div class="feat-ico" style="background:rgba(167,139,250,.1);">📊</div>
-          <div class="feat-name">Assignment Insight Agent</div>
-          <p class="feat-desc">Breaks down complex assignments and provides strategic guidance and performance analysis.
-          </p>
+          <div class="feat-ico" style="background:rgba(167,139,250,.1);">👥</div>
+          <div class="feat-name">Peer Mentoring</div>
+          <p class="feat-desc">Find and instantly connect with subject experts or student mentors through intelligent
+            networking prompts.</p>
         </div>
         <div class="feat-card fc-d">
           <div class="feat-ico" style="background:rgba(45,212,191,.1);">🗓️</div>
-          <div class="feat-name">Study Planning Agent</div>
+          <div class="feat-name">Study Planner</div>
           <p class="feat-desc">Creates optimized study schedules based on upcoming tasks and current workload analysis.
           </p>
         </div>
         <div class="feat-card fc-e">
           <div class="feat-ico" style="background:rgba(129,140,248,.1);">🎯</div>
-          <div class="feat-name">Interview Preparation Agent</div>
+          <div class="feat-name">Mock Interviewer</div>
           <p class="feat-desc">Simulates technical interview questions and evaluates responses in real time with
             feedback.</p>
         </div>
         <div class="feat-card fc-f">
-          <div class="feat-ico" style="background:rgba(56,189,248,.1);">📚</div>
-          <div class="feat-name">Knowledge Retrieval Agent</div>
-          <p class="feat-desc">Fetches relevant study materials and documents instantly using semantic search pipelines.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <div class="l-divider"></div>
-
-    <!-- Three Agents -->
-    <section class="agents-section" id="sec-agents">
-      <div class="sec-kicker">Multi-Agent Architecture</div>
-      <h2 class="sec-title">Three agents. One unified system.</h2>
-      <p class="sec-sub">Each agent operates autonomously within its domain, then shares context with the others —
-        forming a cooperative pipeline that handles complex academic tasks end-to-end.</p>
-      <div class="agents-flow">
-        <div class="agent-node anode-1">
-          <div class="an-num">01 / PLANNER</div>
-          <div class="an-orb">
-            <div class="an-orb-core"></div>
-            <div class="an-orb-ring"></div>
-          </div>
-          <div class="an-name">Planner Agent</div>
-          <div class="an-role">Schedules · Deadlines · Action Plans</div>
-          <p class="an-desc">Continuously monitors academic timelines, organizes priorities, syncs calendar data, and
-            dispatches structured task plans to downstream agents.</p>
-          <div class="an-status">
-            <div class="an-dot"></div>Coordinating Tasks
-          </div>
-        </div>
-        <div class="agents-connector">
-          <div class="conn-line"></div>
-          <div class="conn-chevron">→</div>
-          <div class="conn-lbl">Dispatches<br>task context</div>
-          <div class="conn-line"></div>
-        </div>
-        <div class="agent-node anode-2">
-          <div class="an-num">02 / KNOWLEDGE</div>
-          <div class="an-orb">
-            <div class="an-orb-core"></div>
-            <div class="an-orb-ring"></div>
-          </div>
-          <div class="an-name">Knowledge Agent</div>
-          <div class="an-role">Retrieval · RAG Pipelines · Answers</div>
-          <p class="an-desc">Receives task context from the Planner, performs semantic search over academic documents,
-            and surfaces relevant materials and answers for the Automation Agent.</p>
-          <div class="an-status">
-            <div class="an-dot"></div>Retrieving Information
-          </div>
-        </div>
-        <div class="agents-connector">
-          <div class="conn-line"></div>
-          <div class="conn-chevron">→</div>
-          <div class="conn-lbl">Forwards<br>knowledge</div>
-          <div class="conn-line"></div>
-        </div>
-        <div class="agent-node anode-3">
-          <div class="an-num">03 / AUTOMATION</div>
-          <div class="an-orb">
-            <div class="an-orb-core"></div>
-            <div class="an-orb-ring"></div>
-          </div>
-          <div class="an-name">Automation Agent</div>
-          <div class="an-role">Execution · Solutions · Analysis</div>
-          <p class="an-desc">Executes final task actions — generating assignment solutions, performing insight analysis,
-            simulating interviews, and delivering structured output to the user.</p>
-          <div class="an-status">
-            <div class="an-dot"></div>Executing Operations
-          </div>
+          <div class="feat-ico" style="background:rgba(56,189,248,.1);">✉️</div>
+          <div class="feat-name">EduSync</div>
+          <p class="feat-desc">Keeps you upfront and fully updated on current deadlines, official exam schedules, and syllabus changes.</p>
         </div>
       </div>
     </section>
@@ -3536,8 +3570,8 @@
               <div class="acard c-cyan" onclick="openAssignmentSolver()">
                 <div class="ac-shim"></div>
                 <div class="ac-ico ico-cyan">🧩</div>
-                <div class="ac-lbl lbl-cyan">Solver Agent</div>
-                <div class="ac-name">Assignment Solution Agent</div>
+                <div class="ac-lbl lbl-cyan">Helper Agent</div>
+                <div class="ac-name">Assignment Helper</div>
                 <div class="ac-desc">Analyzes questions and generates structured, intelligent answers automatically.
                 </div>
                 <div class="ac-arr">↗</div>
@@ -3557,7 +3591,7 @@
                 <div class="ac-shim"></div>
                 <div class="ac-ico ico-teal">🗓️</div>
                 <div class="ac-lbl lbl-teal">Planning Agent</div>
-                <div class="ac-name">Study Planning Agent</div>
+                <div class="ac-name">Study Planner</div>
                 <div class="ac-desc">Creates optimized study schedules based on tasks and workload analysis.</div>
                 <div class="ac-arr">↗</div>
               </div>
@@ -3566,7 +3600,7 @@
                 <div class="ac-shim"></div>
                 <div class="ac-ico ico-indigo">🎯</div>
                 <div class="ac-lbl lbl-indigo">Coach Agent</div>
-                <div class="ac-name">Interview Preparation Agent</div>
+                <div class="ac-name">Mock Interviewer</div>
                 <div class="ac-desc">Simulates technical interviews and evaluates responses in real time.</div>
                 <div class="ac-arr">↗</div>
               </div>
@@ -3595,7 +3629,8 @@
               <div class="p-chip" onclick="fillInput('what are marks of CN')">what are marks of CN</div>
               <div class="p-chip" onclick="fillInput('am i short on attendace in any subject')">am i short on attendace
                 in any subject</div>
-              <div class="p-chip" onclick="fillInput('send email to CN Professor')">send email to CN Professor</div>
+              <div class="p-chip" onclick="fillInput('can you connect me with someone proficient in CN?')">connect me
+                with someone proficient in CN</div>
             </div>
           </div>
 
@@ -3672,8 +3707,8 @@
           <div class="iframe-topbar">
             <button class="iframe-back-btn" onclick="closeViews()">← Back to Chat</button>
             <div>
-              <div class="iframe-title">Assignment Solution Agent</div>
-              <div class="iframe-sub">Solver Agent · Intelligent Answers</div>
+              <div class="iframe-title">Assignment Helper</div>
+              <div class="iframe-sub">Helper Agent · Intelligent Answers</div>
             </div>
           </div>
           <iframe src="http://localhost:8000/assignment-solver?v=6"></iframe>
@@ -3682,11 +3717,12 @@
           <div class="iframe-topbar">
             <button class="iframe-back-btn" onclick="closeViews()">← Back to Chat</button>
             <div>
-              <div class="iframe-title">Interview Preparation Agent</div>
+              <div class="iframe-title">Mock Interviewer</div>
               <div class="iframe-sub">Coach Agent · Mock Interview</div>
             </div>
           </div>
-          <iframe src="https://scholarsync-aps-client.azurewebsites.net/" allow="camera; microphone; display-capture; autoplay"></iframe>
+          <iframe src="https://scholarsync-aps-client.azurewebsites.net/"
+            allow="camera; microphone; display-capture; autoplay"></iframe>
         </div>
         <div class="iframe-view" id="material-view">
           <div class="iframe-topbar">
@@ -4322,7 +4358,7 @@
         </div>
         <div>
           <div class="lc-brand-name">ScholarSync</div>
-          <div class="lc-brand-sub">Azure AI · LangGraph · MS Hackathon 2025</div>
+          <div class="lc-brand-sub">Azure AI · LangGraph · AI UNLOCKED 2026</div>
         </div>
       </div>
 

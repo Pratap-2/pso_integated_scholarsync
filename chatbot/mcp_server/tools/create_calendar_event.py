@@ -4,6 +4,7 @@ from ..calendar_auth import get_calendar_service, CALENDAR_ID
 
 IST = pytz.timezone("Asia/Kolkata")
 
+
 def create_calendar_event(data):
 
     title = data["title"]
@@ -16,8 +17,8 @@ def create_calendar_event(data):
 
         service = get_calendar_service()
 
-        start_dt = datetime.fromisoformat(start_time)
-        end_dt = datetime.fromisoformat(end_time)
+        start_dt = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end_time.replace("Z", "+00:00"))
 
         if start_dt.tzinfo is None:
             start_dt = IST.localize(start_dt)
@@ -37,20 +38,6 @@ def create_calendar_event(data):
             }
         }
 
-        # Add reminders if requested
-        if "reminder_minutes" in data:
-            try:
-                mins = int(data["reminder_minutes"])
-                event["reminders"] = {
-                    "useDefault": False,
-                    "overrides": [
-                        {"method": "popup", "minutes": mins},
-                        {"method": "email", "minutes": mins}
-                    ]
-                }
-            except Exception:
-                pass
-
         event = service.events().insert(
             calendarId=CALENDAR_ID,
             body=event
@@ -58,7 +45,6 @@ def create_calendar_event(data):
 
         return {
             "status": "success",
-            "message": f"✅ Event '{title}' created successfully.",
             "event_id": event.get("id"),
             "event_url": event.get("htmlLink")
         }

@@ -93,7 +93,10 @@ def send_email(to: str, subject: str, body: str) -> str:
 # ---------------- Create Calendar Event ----------------
 @tool
 def create_calendar_event(title: str, start_time: str, end_time: str, reminder_minutes: int | None = None) -> str:
-    """Create a Google Calendar event. reminder_minutes is optional."""
+    """Create a Google Calendar event. start_time and end_time are heavily REQUIRED in ISO 8601 format. If user didn't provide time, return an error asking them."""
+
+    if not start_time or not end_time:
+        return "Error: start_time and end_time are REQUIRED. Ask the user for the missing date/time."
 
     payload: dict[str, str | int] = {
         "title": title,

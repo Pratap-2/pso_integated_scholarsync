@@ -266,11 +266,13 @@ def get_subject_professors_raw(**_) -> str:
     return _mcp_post("/tools/get_subject_professors")
 
 def get_student_connections_raw(**_) -> str:
-    """Return a list of institute students/mentors available for chat and help."""
+    """Return a list of institute students/mentors/experts available for chat, guidance, and help on subjects like CN, OS, algorithms, etc."""
     return _mcp_post("/tools/get_student_connections")
 
 def create_calendar_event_raw(title: str = "", start_time: str = "",
                                end_time: str = "", reminder_minutes=None, **_) -> str:
+    if not start_time or not end_time:
+        return "Error: start_time and end_time are REQUIRED. Please ask the user for the missing date or time to schedule the event."
     payload = {"title": title, "start_time": start_time, "end_time": end_time}
     if reminder_minutes is not None:
         payload["reminder_minutes"] = reminder_minutes

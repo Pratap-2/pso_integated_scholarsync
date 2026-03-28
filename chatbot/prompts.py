@@ -28,7 +28,7 @@ DATA TOOLS (return structured data):
 
 CALENDAR TOOLS (via Google Calendar):
   current_time                 — current date/time (no params)
-  create_calendar_event        — params: {"title":"...","start_time":"ISO","end_time":"ISO"}
+  create_calendar_event        — params: {"title":"...","start_time":"ISO (REQUIRED)","end_time":"ISO (REQUIRED)"}
   list_calendar_events         — params: {"date":"YYYY-MM-DD"}
   check_calendar_free          — params: {"start_time":"ISO","end_time":"ISO"}
   update_event_by_title        — params: {"title":"...","start_time":"ISO","end_time":"ISO"}
@@ -36,7 +36,7 @@ CALENDAR TOOLS (via Google Calendar):
 
 COMMUNICATION TOOLS:
   get_subject_professors       — professor names + emails (no params)
-  get_student_connections      — institute students/mentors available for chat and help (no params)
+  get_student_connections      — connect with expert peers/mentors for guidance, help, or to practice any subject/concept (e.g., CN, networks, OS, greedy algorithms, software engineering) (no params)
   send_email                   — params: {"to":"...","subject":"...","body":"..."}
                                  ⚠ ALWAYS requires_confirmation: true
 
